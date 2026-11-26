@@ -738,6 +738,94 @@ main .button:disabled{opacity:.5;cursor:not-allowed}
 
 /* V9.1: educational scope is editable once; supporting controls are progressive */
 .context-summary{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:12px 0;padding:11px 16px;border:1px solid #dce6dd;border-radius:14px;background:#f8faf7;color:#345c4d;direction:rtl}.context-summary-label{font-size:.79rem;color:#668071}.context-summary strong{font-size:.88rem;flex:1;min-width:180px}.context-summary-mode{font-size:.78rem;background:#e8f1e9;border-radius:99px;padding:5px 10px;white-space:nowrap}.settings-secondary,.result-tools{border:1px solid #dae6db;border-radius:13px;background:#fafcf9;margin:12px 0;overflow:hidden}.settings-secondary>summary,.result-tools>summary{cursor:pointer;padding:13px 16px;font-weight:700;color:#2b5946;list-style-position:inside}.settings-secondary[open]>summary,.result-tools[open]>summary{border-bottom:1px solid #e2eae3}.settings-secondary>.stadium-audio-tester{margin:12px}.settings-secondary>.warning{margin:12px}.result-tools{margin:0}.result-tools-buttons{display:flex;flex-wrap:wrap;gap:8px;padding:10px}.result-actions{align-items:center;flex-wrap:wrap}.result-actions .button{min-height:42px}@media(max-width:600px){.context-summary{margin:10px 0;padding:11px;gap:5px 10px}.context-summary strong{min-width:100%;order:3}.context-summary-mode{margin-inline-start:auto}.section-heading{align-items:stretch;flex-wrap:wrap}.result-actions{width:100%}.result-actions>.button,.result-actions>.result-tools{flex:1 1 100%;text-align:center}.result-tools-buttons>*{width:100%}.settings-secondary>.stadium-audio-tester{display:flex;flex-wrap:wrap}}
+
+/* RT-UI-HomeShell-1: official school identity, Masar-style home, single-section navigation. */
+.school-masthead.home-shell-header{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.18fr) minmax(0,1fr);
+ align-items:center;gap:20px;min-height:142px;padding:18px 27px;direction:rtl;
+ background:linear-gradient(110deg,#f3faf6 0%,#fff 46%,#f9fcfa 100%);
+}
+.home-shell-header .school-identity{display:flex;align-items:center;gap:14px;min-width:0;width:auto}
+.home-shell-header .school-logo{
+ width:96px;height:96px;max-width:none;flex-shrink:0;object-fit:contain;
+ border:0;border-radius:0;box-shadow:none;padding:0;background:transparent;
+ mix-blend-mode:multiply;
+}
+.home-shell-header .school-identity-copy{min-width:0}
+.home-shell-header .school-name{font-size:clamp(14px,1.15vw,18px);line-height:1.65;color:#194f3c;font-weight:900;margin:0}
+.home-shell-header .school-grades{font-size:12px;line-height:1.55;font-weight:800;color:#527464;white-space:nowrap;margin-top:4px}
+.home-shell-header .school-grades bdi{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.home-shell-header .home-brand-center{min-width:0;text-align:center}
+.home-shell-header .brand-title{font-size:clamp(29px,3vw,43px);line-height:1.35;color:#123d30;font-weight:950;letter-spacing:-.6px}
+.home-shell-header .brand-sub{font-size:13px;color:#667e70;line-height:1.7;margin-top:5px}
+.home-shell-header .header-actions{
+ display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;
+ justify-self:end;align-self:center;gap:7px;width:auto;min-width:0;
+}
+.home-shell-header .date-pill{font-size:12px;padding:6px}
+.home-shell-header .sound-control{font-size:12px;min-height:43px;padding:10px 13px}
+.home-shell-header .sound-control span{display:inline}
+.home-section-head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:14px 0 21px;padding:14px 18px;background:#fff;border:1px solid #dce9df;border-radius:15px}
+.home-section-name{display:flex;flex-direction:column;gap:4px;color:#153e30}
+.section-eyebrow{font-size:11px;line-height:1.5;font-weight:850;color:#668b77}
+.home-section-name strong{font-size:19px;line-height:1.4}
+.back-home-btn{display:inline-flex;justify-content:center;align-items:center;gap:10px;min-height:45px;border-radius:11px;border:1px solid #c8ded1;background:#edf6f0;color:#19553c;font-size:13px;font-weight:900;padding:10px 16px}
+.back-home-btn svg{width:18px;height:18px;transform:rotate(180deg)}
+.home-welcome{display:flex;align-items:center;justify-content:space-between;gap:24px;background:linear-gradient(115deg,#074e3c,#126d53);color:#fff;border:1px solid #c8b269;border-bottom:4px solid #c8a74b;border-radius:19px;padding:25px 32px;margin:18px 0 29px}
+.home-welcome .section-eyebrow{color:#d0e9dc}
+.home-welcome h1{font-size:clamp(23px,2.35vw,34px);line-height:1.45;margin:6px 0 9px;color:#fff}
+.home-welcome p{margin:0;line-height:1.8;font-size:13px;color:#e4f2eb;max-width:700px}
+.home-welcome-mark{flex:none;width:62px;height:62px;display:grid;place-items:center;border:1px solid #ffffff54;border-radius:17px;background:#ffffff14}
+.home-welcome-mark svg{width:32px;height:32px}
+.home-directory{margin:0 0 23px}
+.home-directory-title{margin:0 0 16px}
+.home-directory-title h2{font-size:23px;line-height:1.5;color:#153c2e;margin:0}
+.home-directory-title p{font-size:13px;color:#708475;margin:5px 0 0}
+.home-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.home-section-card{display:flex;flex-direction:column;gap:10px;padding:23px 22px 16px;min-height:224px;border-radius:17px;background:#fff;border:1px solid #d4e5da;box-shadow:0 8px 24px #123b2710;border-right:4px solid #206c50}
+.home-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.home-card-icon{display:grid;place-items:center;background:#e6f2ea;color:#1c634b;border-radius:13px;width:45px;height:45px}
+.home-card-icon svg{width:24px;height:24px}
+.home-card-meta{font-size:11px;font-weight:800;background:#f4f7f0;border-radius:20px;padding:6px 9px;color:#577360}
+.home-section-card h3{font-size:19px;font-weight:900;color:#1b4b36;margin:1px 0 0}
+.home-section-card p{font-size:13px;line-height:1.75;color:#576e5e;margin:0 0 4px;flex:1}
+.home-card-open{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:46px;padding:10px 15px;border:0;border-radius:11px;background:#08604a;color:#fff;font-weight:900;font-size:13px}
+.home-card-open:hover{background:#084b3b}
+.home-card-open svg{width:18px;height:18px}
+.home-card-open:focus-visible,.back-home-btn:focus-visible{outline:3px solid #b0cd98;outline-offset:3px}
+@media(max-width:900px){
+ .school-masthead.home-shell-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px 12px;min-height:145px;padding:15px 18px}
+ .home-shell-header .school-identity{flex:1 1 57%;min-width:0;width:auto;gap:9px}
+ .home-shell-header .school-logo{width:74px;height:74px}
+ .home-shell-header .school-name{font-size:13px}
+ .home-shell-header .header-actions{display:flex;flex:0 1 auto;gap:2px;justify-content:flex-end;align-self:center;width:auto;min-width:0}
+ .home-shell-header .date-pill{font-size:11px;padding:3px}
+ .home-shell-header .sound-control{font-size:0;min-height:40px;min-width:41px;padding:8px}
+ .home-shell-header .sound-control span{display:none}
+ .home-shell-header .home-brand-center{flex:1 1 100%;order:3;text-align:center}
+ .home-shell-header .brand-title{font-size:31px}
+ .home-shell-header .brand-sub{font-size:11px}
+}
+@media(max-width:600px){
+ .school-masthead.home-shell-header{padding:12px;min-height:0}
+ .home-shell-header .school-identity{flex:1 1 58%;width:auto;min-width:0}
+ .home-shell-header .school-logo{width:62px;height:62px}
+ .home-shell-header .school-name{font-size:11px;line-height:1.65}
+ .home-shell-header .school-grades{font-size:10px;margin-top:2px}
+ .home-shell-header .header-actions{width:auto;flex:0 0 auto}
+ .home-shell-header .brand-title{font-size:27px}
+ .home-shell-header .brand-sub{font-size:11px}
+ .home-welcome{padding:19px 17px;gap:10px;margin:12px 0 21px}
+ .home-welcome h1{font-size:23px}
+ .home-welcome-mark{width:43px;height:43px}
+ .home-welcome-mark svg{width:24px;height:24px}
+ .home-card-grid{grid-template-columns:1fr;gap:12px}
+ .home-section-card{min-height:190px;padding:18px 17px 14px}
+ .home-section-head{padding:11px 12px;gap:8px}
+ .home-section-name strong{font-size:17px}
+ .back-home-btn{min-height:43px;padding:8px 10px;font-size:12px}
+ .home-directory-title h2{font-size:20px}
+}
 </style>
 </head>
 <body>
@@ -1221,6 +1309,7 @@ const APP_VERSION='V9.0';
 // Official school identity is presentation-only. Do not replace the private school profile data.
 const DISPLAY_SCHOOL_NAME=SCHOOL_NAME;
 const SCHOOL_LOGO_DATA='data:image/webp;base64,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';
+let homeVisible=Boolean(SCHOOL_NAME);
 const orgPrefix=()=>SCHOOL_NAME?SCHOOL_NAME+' • ':'';
 const stageDensity=q=>{if(!q)return '';const L=Math.max((q.text||'').length,0),O=Math.max(...(q.options||[]).map(o=>(o||'').length),0),img=!!q.image||(q.optionImages||[]).some(Boolean);const score=L/2+O*1.2+(img?60:0)+((q.optionImages||[]).some(Boolean)?60:0);return score>230?'stage-dense-2':score>130?'stage-dense-1':''};
 function orgLine(){return SCHOOL_NAME||'مسابقات تعليمية وتقويم متمايز'}
@@ -1295,13 +1384,30 @@ function runModeSwitch(){
  if(state.activeTab!=='live'&&state.activeTab!=='students')return '';
  return `<div class="run-switch" role="group" aria-label="نمط التشغيل"><button type="button" class="run-switch-btn ${state.activeTab==='live'?'active':''}" data-action="tab" data-tab="live" aria-pressed="${state.activeTab==='live'}">${ICONS.target} المسابقة الجماعية</button><button type="button" class="run-switch-btn ${state.activeTab==='students'?'active':''}" data-action="tab" data-tab="students" aria-pressed="${state.activeTab==='students'}">${ICONS.users} التقويم الفردي</button></div>`;
 }
+
+/* RT-UI-HomeShell-1: transient presentation shell only; persistedState stays unchanged. */
+function sectionTitleBar(){
+ const labels={bank:'إعداد الأسئلة',live:'المسابقة',students:'التقويم الفردي',results:'النتائج',settings:'الإعدادات'};
+ return `<div class="home-section-head" aria-label="التنقل داخل المنظومة"><div class="home-section-name"><span class="section-eyebrow">ركلة ترجيحية / الأقسام</span><strong>${labels[state.activeTab]||'القسم'}</strong></div><button type="button" class="back-home-btn" data-action="backHome">${ICONS.arrow}<span>العودة للرئيسية</span></button></div>`;
+}
+function homePage(){
+ const qCount=state.questions.length;
+ const cards=[
+  {id:'bank',title:'إعداد الأسئلة',caption:'أنشئ أسئلة الدروس، واستوردها، وراجع بنك الأسئلة.',icon:ICONS.layers,meta:num(qCount)+' سؤال'},
+  {id:'live',title:'إدارة المسابقة',caption:'شغّل الأسئلة، وأدر الفرق والوقت والتقويم الفردي.',icon:ICONS.target,meta:'تشغيل وتفاعل'},
+  {id:'results',title:'نتائج المسابقة',caption:'استعرض الترتيب والتقارير بعد إتمام الأسئلة.',icon:ICONS.chart,meta:num(completed())+' مكتملة'},
+  {id:'settings',title:'الإعدادات العامة',caption:'اضبط أسماء المجموعات والصوت والنسخ الاحتياطي.',icon:ICONS.settings,meta:'التهيئة والحفظ'}
+ ];
+ return `<section class="home-welcome" aria-labelledby="homeWelcomeTitle"><div><span class="section-eyebrow">لوحة المنظومة الرئيسية</span><h1 id="homeWelcomeTitle">مرحبًا بك في ركلة ترجيحية</h1><p>اختر القسم الذي تريد العمل عليه. يمكنك العودة إلى هذه الصفحة من داخل أي قسم دون فقد بياناتك.</p></div><span class="home-welcome-mark" aria-hidden="true">${ICONS.target}</span></section><section class="home-directory" aria-label="أقسام المنظومة"><div class="home-directory-title"><h2>أقسام المنظومة</h2><p>دخول مباشر وواضح إلى أدوات المعلم</p></div><div class="home-card-grid">${cards.map(card=>`<article class="home-section-card"><div class="home-card-top"><span class="home-card-icon" aria-hidden="true">${card.icon}</span><span class="home-card-meta">${card.meta}</span></div><h3>${card.title}</h3><p>${card.caption}</p><button type="button" class="home-card-open" data-action="openHomeSection" data-tab="${card.id}"><span>دخول القسم</span>${ICONS.arrow}</button></article>`).join('')}</div></section>`;
+}
+
 function header(){
  const nav=[['bank','إعداد الأسئلة',ICONS.layers],['live','المسابقة',ICONS.target],['results','النتائج',ICONS.chart],['settings','الإعدادات',ICONS.settings]];
  const current=state.activeTab==='students'?'live':state.activeTab;
  if(!SCHOOL_NAME){
  return `<header class="masthead"><div class="brand"><div class="brand-mark">${ICONS.brand}</div><div>${SCHOOL_NAME?`<div class="brand-overline">${esc(SCHOOL_NAME)}</div>`:''}<div class="brand-title">ركلة ترجيحية</div><div class="brand-sub">مسابقات تعليمية وتقويم متمايز</div></div></div><div class="header-actions"><div class="date-pill">${today()}</div><button class="button white sm sound-control" data-action="toggleSound" title="تفعيل أو كتم المؤثرات">${state.settings.sounds?ICONS.sound:ICONS.mute}<span>${state.settings.sounds?'الصوت مفعّل':'الصوت مكتوم'}</span></button></div></header><nav class="tabs" aria-label="أقسام التطبيق">${nav.map(([id,label,icon])=>`<button class="tab ${current===id?'active':''}" data-action="tab" data-tab="${id}" aria-current="${current===id?'page':'false'}">${icon}<span>${label}</span></button>`).join('')}</nav>`;
  }
- return `<header class="masthead school-masthead"><div class="brand school-identity"><img class="school-logo" src="${SCHOOL_LOGO_DATA}" alt="شعار المدرسة" width="76" height="76"><div class="school-identity-copy"><div class="brand-overline school-name">${esc(DISPLAY_SCHOOL_NAME)}</div><div class="school-system"><span class="school-system-icon">${ICONS.brand}</span><div><div class="brand-title">ركلة ترجيحية</div><div class="brand-sub">مسابقات تعليمية وتقويم متمايز</div></div></div></div></div><div class="header-actions"><div class="date-pill">${today()}</div><button class="button white sm sound-control" type="button" data-action="toggleSound" title="تفعيل أو كتم المؤثرات">${state.settings.sounds?ICONS.sound:ICONS.mute}<span>${state.settings.sounds?'الصوت مفعّل':'الصوت مكتوم'}</span></button></div></header><nav class="tabs" aria-label="أقسام التطبيق">${nav.map(([id,label,icon])=>`<button class="tab ${current===id?'active':''}" data-action="tab" data-tab="${id}" aria-current="${current===id?'page':'false'}">${icon}<span>${label}</span></button>`).join('')}</nav>`;
+ return `<header class="masthead school-masthead home-shell-header"><div class="school-identity"><img class="school-logo" src="${SCHOOL_LOGO_DATA}" alt="شعار المدرسة" width="92" height="92"><div class="school-identity-copy"><div class="brand-overline school-name">${esc(DISPLAY_SCHOOL_NAME)}</div><div class="school-grades">الصفوف <bdi dir="ltr">(٨–١٠)</bdi></div></div></div><div class="home-brand-center"><div class="brand-title">ركلة ترجيحية</div><div class="brand-sub">مسابقات تعليمية وتقويم متمايز</div></div><div class="header-actions"><div class="date-pill">${today()}</div><button class="button white sm sound-control" type="button" data-action="toggleSound" title="تفعيل أو كتم المؤثرات">${state.settings.sounds?ICONS.sound:ICONS.mute}<span>${state.settings.sounds?'الصوت مفعّل':'الصوت مكتوم'}</span></button></div></header>${homeVisible?'':sectionTitleBar()}`;
 }
 
 function runStatusStrip(){
@@ -1534,8 +1640,9 @@ function individualResultsView(){
 function render(){
  activeTeam=isTurns()&&!state.tieBreak.active?assignedTeam():clamp(activeTeam,0,state.settings.count-1);
  if(state.activeTab==='students')prepareIndividualView();
- const body=state.activeTab==='live'?livePage():state.activeTab==='bank'?bankPage():state.activeTab==='settings'?settingsPage():state.activeTab==='students'?studentsTab():resultsPage();
- el('app').innerHTML=header()+`${contextBar()}<main>${runModeSwitch()}${body}</main>`+`<footer class="footer">ركلة ترجيحية • ${esc(orgPrefix())}الإصدار ${APP_VERSION} • يعمل دون اتصال بالإنترنت</footer>`;
+ const brandedHome=Boolean(SCHOOL_NAME)&&homeVisible;
+ const body=brandedHome?homePage():state.activeTab==='live'?livePage():state.activeTab==='bank'?bankPage():state.activeTab==='settings'?settingsPage():state.activeTab==='students'?studentsTab():resultsPage();
+ el('app').innerHTML=header()+`${brandedHome?'':contextBar()}<main>${brandedHome?'':runModeSwitch()}${body}</main>`+`<footer class="footer">ركلة ترجيحية • ${esc(orgPrefix())}الإصدار ${APP_VERSION} • يعمل دون اتصال بالإنترنت</footer>`;
  renderStage();
 }
 function runTimer(){
@@ -1746,6 +1853,15 @@ function handleAction(btn){
  switch(action){
  case 'resultsView':resultsView=btn.dataset.view==='individual'?'individual':'group';render();break;
  case 'openIndividualResults':resultsView='individual';state.activeTab='results';save();render();break;
+ case 'openHomeSection':
+  if(!['bank','live','results','settings'].includes(btn.dataset.tab))break;
+  if(state.tieBreak.active&&running){toast('أوقف مؤقت الركلة الفاصلة قبل تغيير القسم.',true);break}
+  if(running)stopTimer();if(studentRunning)stopStudentTimer();
+  state.activeTab=btn.dataset.tab;homeVisible=false;save();render();window.scrollTo(0,0);break;
+ case 'backHome':
+  if(state.tieBreak.active&&running){toast('أوقف مؤقت الركلة الفاصلة قبل العودة للرئيسية.',true);break}
+  if(running)stopTimer();if(studentRunning)stopStudentTimer();
+  homeVisible=true;save();render();window.scrollTo(0,0);break;
  case 'teacherStart':
  case 'tab':
   if(state.tieBreak.active&&running){toast('أوقف مؤقت الركلة الفاصلة قبل تغيير التبويب.',true);break}
@@ -2734,6 +2850,10 @@ function startTab(){
  return state.activeTab;
 }
 state.activeTab=startTab();
+if(SCHOOL_NAME){
+ const q=state.questions[state.currentIndex],ses=state.studentArea?.session;
+ if(state.tieBreak?.active||(q&&state.started?.[q.id]&&!state.locked?.[q.id]&&!state.finished)||(ses&&ses.started&&!ses.locked))homeVisible=false;
+}
 render();
 if(bootRecoveryRaw!==null)download('rakla_tarjihiya_recovery.json',bootRecoveryRaw,'application/json;charset=utf-8');
 if(bootNotice)toast(bootNotice,true);
