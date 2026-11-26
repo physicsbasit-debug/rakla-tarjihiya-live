@@ -1470,7 +1470,7 @@ function studentManagementCard(){
 function dataCardHTML(){
  return `<section class="card data-card"><div class="card-head"><h3 class="card-title">${ICONS.export} البيانات والنسخ الاحتياطي</h3></div><div class="card-pad"><div class="data-actions"><button class="button white sm" data-action="exportJson">${ICONS.save} نسخة كاملة (أسئلة ونتائج وطلبة)</button><button class="button white sm" data-action="importJson">${ICONS.upload} استيراد ملف</button></div><p class="data-note">النسخة الكاملة تتضمن أسماء الطلبة وتصنيفاتهم ونتائجهم؛ احتفظ بها لنفسك ولا ترفعها إلى مكان عام. ملف «الأسئلة فقط» هو الذي يصلح للمشاركة مع الزملاء. الاستيراد يقبل الملفين: النسخة الكاملة تستبدل البيانات الحالية بعد موافقتك، وملف الأسئلة يضيف أسئلة جديدة دون حذف شيء، وفي الحالتين تُحفظ نسخة احتياطية قبل أي تغيير.</p></div></section>`;
 }
-function settingsPage(){return recoveryNotice()+`<div class="section-heading"><div><h2>إعداد المسابقة</h2><p>اضبط المسابقة وأسماء المجموعات بالطريقة التي تناسب حصتك.</p></div></div><div class="results-grid"><div class="card"><div class="card-head"><h3 class="card-title">${ICONS.settings} الإعدادات العامة</h3></div><form class="card-pad" id="settingsForm"><div class="field"><label>عنوان المسابقة</label><input name="title" maxlength="100" value="${esc(state.settings.title)}" required></div><div class="field-row"><div class="field"><label>عدد المجموعات</label><select name="count">${Array.from({length:9},(_,i)=>i+2).map(n=>`<option value="${n}" ${state.settings.count===n?'selected':''}>${num(n)} مجموعات</option>`).join('')}</select></div></div><div class="field"><label>طريقة المنافسة</label><div class="play-style-grid"><label class="play-style-card"><input type="radio" name="playStyle" value="simultaneous" ${!isTurns()?'checked':''}><span><strong>تحدٍ جماعي متزامن</strong><small>السؤال نفسه لجميع المجموعات، ومؤقت واحد مشترك.</small></span></label><label class="play-style-card"><input type="radio" name="playStyle" value="turns" ${isTurns()?'checked':''}><span><strong>ركلات ترجيحية بالتناوب</strong><small>سؤال مستقل لكل مجموعة، ومؤقت يتجدد في كل دور.</small></span></label></div><div class="caption" style="margin-top:8px">في التناوب يجب أن تتساوى أعداد الأسئلة، ونقاطها، وتوزيع مستويات الصعوبة (سهل، متوسط، صعب).</div>${isTurns()?`<div class="${turnReadiness().ready?'note-good':'warning'}">${esc(turnReadiness().message)}</div>`:''}</div><div class="field-row"><div class="field"><label>الزمن الافتراضي للأسئلة الجديدة</label><input name="defaultTime" type="text" inputmode="numeric" autocomplete="off" data-range="5-300" placeholder="5 – 300" value="${state.settings.defaultTime}"></div><div class="field"><label>النقاط الافتراضية للأسئلة الجديدة</label><input name="defaultPoints" type="text" inputmode="numeric" autocomplete="off" data-range="1-1000" placeholder="1 – 1000" value="${state.settings.defaultPoints}"></div></div><label class="toggle">المؤثرات الصوتية والاحتفال <input type="checkbox" name="sounds" ${state.settings.sounds?'checked':''}></label><div class="action-group" style="margin-top:19px"><button class="button primary" type="submit">${ICONS.save} حفظ الإعدادات</button><button class="button danger" type="button" data-action="resetRound">${ICONS.reset} بدء مسابقة جديدة بالنقاط صفر</button></div><details class="settings-secondary safety-help"><summary>تعليمات المنافسة وحفظ النتائج</summary><div class="warning">في التحدي الجماعي تُسجل الإجابات من شاشة المعلم الخاصة فقط، ولا تُعرض اختيارات المجموعات على السبورة. تُقفل الإجابات بانتهاء الوقت تلقائيًا. في التناوب لا تُقبل إجابة بعد انتهاء وقت المجموعة. في التقويم الختامي تُسجل بطاقات الخروج وتُعلن النتائج بعد السؤال الأخير فقط. في التقويم التكويني تُكشف الإجابة بعد كل سؤال. التقويم التكويني والختامي لهما بنكان ونتائج منفصلة. تغيير نوع التقويم لا يمسح النتائج، أما تغيير عدد المجموعات فيصفّر نتائج البنكين بعد التأكيد. تغيير طريقة المنافسة يصفّر نتائج التقويم الحالي فقط بعد التأكيد. بدء مسابقة جديدة يصفّر نتائج التقويم النشط دون حذف أسئلته.</div></details></form></div><div class="card"><div class="card-head"><h3 class="card-title">${ICONS.cup} أسماء المجموعات</h3><span class="pill">من مجموعتين إلى 10 مجموعات</span></div><div class="card-pad"><div class="side-note">يُحفظ كل اسم مستقلًا. المجموعات التي تزيد عن العدد المحدد تُحتفظ بأسمائها إلى حين تفعيلها.</div><div class="groups-name-grid">${Array.from({length:state.settings.count},(_,i)=>`<div class="field"><label>المجموعة ${num(i+1)}</label><input form="settingsForm" name="g${i}" maxlength="48" value="${esc(state.settings.groups[i])}"></div>`).join('')}</div></div></div></div><details class="settings-secondary"><summary>تجربة أصوات ومشاهد الملعب</summary><div class="stadium-audio-tester"><div><strong>تجربة أصوات ومشاهد الملعب</strong><br><small>جرّب الصوت من هذا الجهاز قبل العرض على السبورة. السماعات والمستوى الصوتي من الجهاز.</small></div><button class="button primary sm" data-action="demoGoal" type="button">${ICONS.target} تجربة هدف</button><button class="button white sm" data-action="demoMiss" type="button">${ICONS.close} تجربة تسديدة ضائعة</button><button class="button primary sm" data-action="demoChampion" type="button">${ICONS.cup} هتاف التتويج</button></div></details>${studentManagementCard()}${dataCardHTML()}`}
+function settingsPage(){return recoveryNotice()+`<div class="section-heading"><div><h2>إعداد المسابقة</h2><p>اضبط المسابقة وأسماء المجموعات بالطريقة التي تناسب حصتك.</p></div></div><div class="results-grid"><div class="card"><div class="card-head"><h3 class="card-title">${ICONS.settings} الإعدادات العامة</h3></div><form class="card-pad" id="settingsForm"><div class="field"><label>عنوان المسابقة</label><input name="title" maxlength="100" value="${esc(state.settings.title)}" required></div><div class="field-row"><div class="field"><label>عدد المجموعات</label><select name="count">${Array.from({length:9},(_,i)=>i+2).map(n=>`<option value="${n}" ${state.settings.count===n?'selected':''}>${num(n)} مجموعات</option>`).join('')}</select></div></div><div class="field"><label>طريقة المنافسة</label><div class="play-style-grid"><label class="play-style-card"><input type="radio" name="playStyle" value="simultaneous" ${!isTurns()?'checked':''}><span><strong>تحدٍ جماعي متزامن</strong><small>السؤال نفسه لجميع المجموعات، ومؤقت واحد مشترك.</small></span></label><label class="play-style-card"><input type="radio" name="playStyle" value="turns" ${isTurns()?'checked':''}><span><strong>ركلات ترجيحية بالتناوب</strong><small>سؤال مستقل لكل مجموعة، ومؤقت يتجدد في كل دور.</small></span></label></div><div class="caption" style="margin-top:8px">في التناوب يجب أن تتساوى أعداد الأسئلة، ونقاطها، وتوزيع مستويات الصعوبة (سهل، متوسط، صعب).</div>${isTurns()?`<div class="${turnReadiness().ready?'note-good':'warning'}">${esc(turnReadiness().message)}</div>`:''}</div><div class="field-row"><div class="field"><label>الزمن الافتراضي للأسئلة الجديدة</label><input name="defaultTime" type="text" inputmode="numeric" autocomplete="off" data-range="5-300" placeholder="5 – 300" value="${state.settings.defaultTime}"></div><div class="field"><label>النقاط الافتراضية للأسئلة الجديدة</label><input name="defaultPoints" type="text" inputmode="numeric" autocomplete="off" data-range="1-1000" placeholder="1 – 1000" value="${state.settings.defaultPoints}"></div></div><label class="toggle">المؤثرات الصوتية والاحتفال <input type="checkbox" name="sounds" ${state.settings.sounds?'checked':''}></label><div class="action-group" style="margin-top:19px"><button class="button primary" type="submit">${ICONS.save} حفظ الإعدادات</button><button class="button danger" type="button" data-action="resetRound">${ICONS.reset} بدء مسابقة جديدة بالنقاط صفر</button></div><details class="settings-secondary safety-help"><summary>تعليمات المنافسة وحفظ النتائج</summary><div class="warning">في التحدي الجماعي تُسجل الإجابات من شاشة المعلم الخاصة فقط، ولا تُعرض اختيارات المجموعات على السبورة. تُقفل الإجابات بانتهاء الوقت تلقائيًا. في التناوب لا تُقبل إجابة بعد انتهاء وقت المجموعة. في التقويم الختامي تُسجل بطاقات الخروج وتُعلن النتائج بعد السؤال الأخير فقط. في التقويم التكويني تُكشف الإجابة بعد كل سؤال. التقويم التكويني والختامي لهما بنكان ونتائج منفصلة. تغيير نوع التقويم لا يمسح النتائج، أما تغيير عدد المجموعات فيصفّر نتائج البنكين بعد التأكيد. تغيير طريقة المنافسة يصفّر نتائج التقويم الحالي فقط بعد التأكيد. بدء مسابقة جديدة يصفّر نتائج التقويم النشط دون حذف أسئلته.</div></details></form></div><div class="card"><div class="card-head"><h3 class="card-title">${ICONS.cup} أسماء المجموعات</h3><span class="pill">من مجموعتين إلى 10 مجموعات</span></div><div class="card-pad"><div class="side-note">يُحفظ كل اسم مستقلًا. المجموعات التي تزيد عن العدد المحدد تُحتفظ بأسمائها إلى حين تفعيلها.</div><div class="groups-name-grid">${Array.from({length:state.settings.count},(_,i)=>`<div class="field"><label>المجموعة ${num(i+1)}</label><input form="settingsForm" name="g${i}" maxlength="48" value="${esc(state.settings.groups[i])}"></div>`).join('')}</div></div></div></div><details class="settings-secondary"><summary>تجربة أصوات ومشاهد الملعب</summary><div class="stadium-audio-tester"><div><strong>تجربة أصوات ومشاهد الملعب</strong><br><small>جرّب المؤثرات الإلكترونية من هذا الجهاز قبل العرض على السبورة. شغّل الصوت وتحقق من مستوى صوت السماعات.</small></div><button class="button primary sm" data-action="demoGoal" type="button">${ICONS.target} تجربة هدف</button><button class="button white sm" data-action="demoMiss" type="button">${ICONS.close} تجربة تسديدة ضائعة</button><button class="button primary sm" data-action="demoChampion" type="button">${ICONS.cup} هتاف التتويج</button></div></details>${studentManagementCard()}${dataCardHTML()}`}
 function startTieRound(){
  if(!state.finished){toast('تنتهي المسابقة الأساسية قبل ركلات الحسم.',true);return}
  if(state.tieBreak.active){toast('توجد ركلة فاصلة جارية بالفعل.',true);return}
@@ -1879,7 +1879,7 @@ function handleAction(btn){
   case 'renameCurrUnit':renameCurrScope('unit');break;
   case 'renameCurrLesson':renameCurrScope('lesson');break;
   case 'copyQToLesson':copyArchivedQuestionToLesson(btn.dataset.id);break;
-  case 'toggleSound':state.settings.sounds=!state.settings.sounds;save();render();break;
+  case 'toggleSound':state.settings.sounds=!state.settings.sounds;if(!state.settings.sounds)stopStadiumClip();else unlockAudio();save();render();break;
  case 'timer':
   if(!q||isDone(q.id)||qIsLocked(q)||state.finished)break;
   if(isTurns()&&!turnReadiness().ready){toast(turnReadiness().message,true);break}
@@ -1973,8 +1973,15 @@ function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
 
 // صوت الجمهور للهدف والتتويج مقتطع من الفيديو الذي أرسله المستخدم؛ يحفظ داخل HTML دون إنترنت. وصيحة ضياع الركلة مقتطعة من تسجيل الجمهور الذي أرفقه المستخدم (من 4.90s إلى 8.60s).
 const STADIUM_AUDIO={};
-const STADIUM_BUFFERS={}; const STADIUM_PENDING={}; let activeStadiumSound=null, activeStadiumMedia=null;
+const STADIUM_BUFFERS={}; const STADIUM_PENDING={}; let activeStadiumSound=null, activeStadiumMedia=null, activeStadiumSynth=null;
 function stopStadiumClip(){
+ if(activeStadiumSynth){
+  const effect=activeStadiumSynth;activeStadiumSynth=null;
+  try{effect.master.gain.cancelScheduledValues(effect.ctx.currentTime);
+   effect.master.gain.setValueAtTime(Math.max(.0001,effect.master.gain.value),effect.ctx.currentTime);
+   effect.master.gain.exponentialRampToValueAtTime(.0001,effect.ctx.currentTime+.018)}catch(e){}
+  for(const source of effect.sources)try{source.stop(effect.ctx.currentTime+.03)}catch(e){}
+ }
  if(activeStadiumSound){try{activeStadiumSound.stop()}catch(e){} activeStadiumSound=null}
  if(activeStadiumMedia){try{activeStadiumMedia.pause();activeStadiumMedia.removeAttribute('src');activeStadiumMedia.load()}catch(e){}activeStadiumMedia=null}
 }
@@ -1988,8 +1995,73 @@ function prepareStadiumAudio(){
   }catch(e){}
  }
 }
+// Original, offline-capable crowd/goal effects for the publicly shareable branded build.
+// Recorded clips remain private: no audio file, roster or URL is included in this fallback.
+function synthStadiumEffect(key){
+ if(!state.settings.sounds||!['goal','miss','champion'].includes(key))return false;
+ try{
+  unlockAudio();
+  if(!audioCtx||audioCtx.state==='closed')return false;
+  stopStadiumClip();
+  const ctx=audioCtx,t=ctx.currentTime+.035,master=ctx.createGain(),sources=[];
+  master.gain.value=.82;master.connect(ctx.destination);
+  const effect={ctx,master,sources,key};activeStadiumSynth=effect;
+  const tone=(from,to,delay,duration,volume,type='sine')=>{
+   const osc=ctx.createOscillator(),gain=ctx.createGain(),begin=t+delay,end=begin+duration;
+   osc.type=type;osc.frequency.setValueAtTime(from,begin);
+   osc.frequency.exponentialRampToValueAtTime(Math.max(30,to),end);
+   gain.gain.setValueAtTime(.0001,begin);
+   gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),begin+.018);
+   gain.gain.setValueAtTime(Math.max(.0002,volume*.75),Math.max(begin+.02,end-.085));
+   gain.gain.exponentialRampToValueAtTime(.0001,end);
+   osc.connect(gain);gain.connect(master);osc.start(begin);osc.stop(end+.02);sources.push(osc);
+  };
+  const crowd=(delay,duration,volume,center)=>{
+   const len=Math.floor(ctx.sampleRate*duration),buf=ctx.createBuffer(1,len,ctx.sampleRate),data=buf.getChannelData(0);
+   // Multi-person-like wash: amplitude modulation of filtered noise, synthesized locally.
+   for(let i=0;i<len;i++){
+    const tSec=i/ctx.sampleRate;
+    const flutter=.72+.16*Math.sin(2*Math.PI*5.8*tSec)+.12*Math.sin(2*Math.PI*13.1*tSec);
+    data[i]=(Math.random()*2-1)*flutter;
+   }
+   const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),low=ctx.createBiquadFilter(),gain=ctx.createGain(),begin=t+delay,end=begin+duration;
+   src.buffer=buf;filter.type='bandpass';filter.frequency.value=center;filter.Q.value=.55;
+   low.type='lowpass';low.frequency.value=2100;
+   gain.gain.setValueAtTime(.0001,begin);
+   gain.gain.exponentialRampToValueAtTime(volume,begin+.16);
+   gain.gain.setValueAtTime(volume*.85,Math.max(begin+.17,end-.24));
+   gain.gain.exponentialRampToValueAtTime(.0001,end);
+   src.connect(filter);filter.connect(low);low.connect(gain);gain.connect(master);
+   src.start(begin);src.stop(end+.02);sources.push(src);
+  };
+  // The ball strike is shared, while the crowd, pitch and rhythm distinguish outcomes.
+  if(key!=='champion')tone(160,65,0,.14,.18,'triangle');
+  if(key==='goal'){
+   crowd(.15,2.15,.28,920);
+   tone(300,610,.27,.55,.045,'sawtooth');
+   tone(420,735,.55,.65,.04,'triangle');
+   tone(480,540,1.1,.55,.026,'sawtooth');
+  }else if(key==='miss'){
+   crowd(.18,1.45,.19,470);
+   tone(420,195,.28,1.1,.085,'sine');
+   tone(290,140,.45,.83,.035,'triangle');
+  }else{
+   crowd(0,3.2,.30,1030);
+   tone(450,680,.12,.44,.075,'sawtooth');
+   tone(510,760,.72,.45,.07,'sawtooth');
+   tone(560,830,1.31,.53,.065,'sawtooth');
+   tone(360,540,2.05,.74,.04,'triangle');
+  }
+  const endAt=t+(key==='champion'?3.25:key==='goal'?2.35:1.75);
+  master.gain.setValueAtTime(.82,t);
+  master.gain.setValueAtTime(.82,endAt-.14);
+  master.gain.exponentialRampToValueAtTime(.0001,endAt);
+  return true;
+ }catch(e){stopStadiumClip();return false}
+}
 function playStadiumClip(key){
- if(!state.settings.sounds||!STADIUM_AUDIO[key])return;
+ if(!state.settings.sounds)return;
+ if(!STADIUM_AUDIO[key]){if(!synthStadiumEffect(key))toast('تعذر تشغيل المؤثر الصوتي على هذا الجهاز.',true);return;}
  // تشغيل وسائط HTML أولًا، وتحويل الصوت المفكوك بواسطة WebAudio مسارًا احتياطيًا.
  // وجود مسارين يمنع الصمت إذا تعذر decodeAudioData على بعض أجهزة السبورة.
  try{
@@ -2141,7 +2213,7 @@ function showPenaltySequence(items,{onComplete=null}={}){
  present();
 }
 function finalizedKickOutcomes(q){if(!q||!isDone(q.id)&&!state.finished)return[];const a=ansFor(q.id);return candidatesFor(q).map(i=>({name:state.settings.groups[i],goal:a[i]===q.correct,answered:Number.isInteger(a[i])&&a[i]>=0})).filter(x=>x.answered)}
-function demoPenalty(kind){if(kind==='champion'){stopPenaltySequence();unlockAudio();playStadiumClip('champion');confetti(85);toast('يعمل الآن تسجيل جمهور التتويج من المرجع المرفق.');return}showPenaltySequence([{name:kind==='goal'?'تجربة تسديدة ناجحة':'تجربة تسديدة ضائعة',goal:kind!=='miss'}])}
+function demoPenalty(kind){if(kind==='champion'){stopPenaltySequence();unlockAudio();playStadiumClip('champion');confetti(85);toast(STADIUM_AUDIO.champion?'يعمل الآن تسجيل جمهور التتويج.':'يعمل الآن مؤثر التتويج الإلكتروني.');;return}showPenaltySequence([{name:kind==='goal'?'تجربة تسديدة ناجحة':'تجربة تسديدة ضائعة',goal:kind!=='miss'}])}
 
 function replayAssessmentPenaltyResults(){
  if(isSummative()&&!state.finished){toast('لا يمكن عرض الركلات قبل إنهاء التقويم الختامي.',true);return}
