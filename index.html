@@ -881,6 +881,41 @@ main .button:disabled{opacity:.5;cursor:not-allowed}
  .back-home-btn{min-height:43px;padding:8px 10px;font-size:12px}
  .home-directory-title h2{font-size:20px}
 }
+
+/* RT-objectives-phase1 */
+.lesson-objectives-card{margin:15px 0 18px;border-color:#cfe0d3}
+.lesson-objectives-card .card-head{background:#f4f8f2}
+.lesson-objectives-card .card-pad{padding:16px 19px}
+.lesson-objective-form{margin:12px 0}
+.lesson-objective-form>label{display:block;font-size:13px;font-weight:850;margin:0 0 7px;color:#31593f}
+.lesson-objective-input{display:flex;align-items:center;gap:9px}
+.lesson-objective-input input{flex:1;min-width:0;min-height:43px}
+.lesson-objective-input button{min-height:43px;white-space:nowrap}
+.lesson-objectives-list{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.lesson-objective-row{display:flex;align-items:center;gap:9px;padding:10px 12px;background:#fbfdfb;border:1px solid #e0ebe2;border-radius:12px}
+.lesson-objective-index{background:#e5f0e8;color:#285e40;border-radius:8px;min-width:26px;padding:6px 7px;text-align:center;font-size:12px;font-weight:900}
+.lesson-objective-text{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px;line-height:1.7;color:#294835;font-weight:750}
+.lesson-objective-count{font-size:11px;color:#597261;white-space:nowrap}
+.lesson-objective-row button{flex-shrink:0}
+.lesson-objective-disclaimer{margin:8px 0 0}
+#questionObjective{max-width:100%;min-height:43px}
+.lesson-objective-report{margin-top:18px}
+.lesson-objective-report .card-pad{padding:18px}
+.lesson-objective-summary{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px}
+.lesson-objective-summary span{padding:8px 12px;border-radius:10px;background:#f0f5f0;color:#35583b;font-weight:750;font-size:12px}
+.lesson-objective-report .metric-table{min-width:700px}
+.lesson-objective-report .metric-table td:first-child{min-width:240px;line-height:1.7}
+.lesson-objective-report .objective-caution{margin:12px 0 0;line-height:1.8}
+@media(max-width:600px){
+ .lesson-objectives-card .card-pad,.lesson-objective-report .card-pad{padding:12px}
+ .lesson-objective-input{flex-direction:column;align-items:stretch}
+ .lesson-objective-row{gap:6px;padding:10px 8px;flex-wrap:wrap}
+ .lesson-objective-text{flex:1 1 calc(100% - 45px)}
+ .lesson-objective-count{margin-inline-start:34px}
+ .lesson-objective-row button{margin-inline-start:auto}
+ .lesson-objective-summary{gap:6px}
+ .lesson-objective-summary span{font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -952,9 +987,10 @@ function exportQuestionsOnly(){
   const qs=w.questions||[],ties=w.tieQuestions||[];if(!qs.length&&!ties.length)continue;
   (slots[mode]??={})[key]={questions:structuredClone(qs),tieQuestions:structuredClone(ties)};n+=qs.length+ties.length;
  }
- if(!n)return toast('لا توجد أسئلة لتصديرها.',true);
- download('rakla_tarjihiya_questions_only.json',JSON.stringify({app:'rakla-tarjihiya',exportKind:'questions-only',version:1,exportedAt:new Date().toISOString(),slots},null,2),'application/json;charset=utf-8');
- toast(`صُدّر بنك الأسئلة (${num(n)} سؤالًا) دون أي بيانات للطلبة أو النتائج.`);
+ const objectives=Object.fromEntries(Object.entries(state.curriculum.objectives||{}).filter(([key,goals])=>validCurrKey(key)&&key!==CURR_UNSORTED&&Array.isArray(goals)&&goals.length).map(([key,goals])=>[key,structuredClone(goals)]));
+ if(!n&&!Object.keys(objectives).length)return toast('لا توجد أسئلة أو أهداف لتصديرها.',true);
+ download('rakla_tarjihiya_questions_only.json',JSON.stringify({app:'rakla-tarjihiya',exportKind:'questions-only',version:1,exportedAt:new Date().toISOString(),slots,objectives},null,2),'application/json;charset=utf-8');
+ toast(`صُدّر بنك الأسئلة (${num(n)} سؤالًا) وأهداف الدروس دون بيانات الطلبة أو النتائج.`);
 }
 function sanitizeNote(){
  const parts=[];
@@ -974,6 +1010,27 @@ function mergeQuestionBank(raw){
  if(!raw.slots||typeof raw.slots!=='object')throw Error('بنك أسئلة غير صالح');
  resetSanitizeLog();storeActiveWorkspace();
  const adds=[],conflicts=[];let duplicates=0,similar=0,overCap=0,badScopes=0;
+ const goalAdds=[],goalMaps=new Map();
+ // Map imported objective IDs to the corresponding current lesson goals without
+ // changing existing IDs, replacing old goals or touching results.
+ if(raw.objectives&&typeof raw.objectives==='object'&&!Array.isArray(raw.objectives)){
+  for(const [key,list] of Object.entries(raw.objectives).slice(0,220)){
+   if(!validCurrKey(key)||key===CURR_UNSORTED)continue;
+   const planned=[...(state.curriculum.objectives[key]||[])];
+   const map=new Map();
+   for(const incoming of cleanLessonObjectives(list)){
+    let existing=planned.find(o=>o.id===incoming.id&&o.text===incoming.text)||planned.find(o=>o.text===incoming.text);
+    if(!existing&&planned.length<LESSON_OBJECTIVE_LIMIT){
+     const conflict=planned.some(o=>o.id===incoming.id);
+     const id=conflict?'lo_'+Date.now().toString(36)+Math.random().toString(36).slice(2,10):incoming.id;
+     existing={id,text:incoming.text};planned.push(existing);goalAdds.push({key,goal:existing});
+    }
+    if(existing)map.set(incoming.id,existing.id);
+   }
+   goalMaps.set(key,map);
+  }
+ }
+
  for(const mode of ASSESSMENTS){
   const modeSlots=raw.slots[mode];if(!modeSlots||typeof modeSlots!=='object')continue;
   for(const key of Object.keys(modeSlots)){
@@ -985,6 +1042,8 @@ function mergeQuestionBank(raw){
     let room=cap-dest[field].length;
     for(const q of Array.isArray(src[field])?src[field]:[]){
      const c=cleanQuestion(q,0);if(!c){logDropped(q);continue}
+     // An imported link must resolve to this same lesson's registered objective.
+     c.objectiveId=goalMaps.get(key)?.get(c.objectiveId)||((state.curriculum.objectives[key]||[]).some(o=>o.id===c.objectiveId)?c.objectiveId:'');
      if(prints.has(questionFingerprint(c))){duplicates++;continue}   // المحتوى نفسه تمامًا موجود في الدرس (بأي معرّف، ومنه نسخة تعارض أُضيفت سابقًا): تُتجاوز فلا تتكرر عند إعادة الاستيراد
      if(ids.has(c.id)){
       // المعرّف نفسه بمحتوى مختلف: لا يُتجاهل ولا يُستبدل؛ يُضاف الوارد بمعرّف جديد وتبقى الموجودة كما هي.
@@ -999,23 +1058,24 @@ function mergeQuestionBank(raw){
    }
   }
  }
- const lines=[`سيُضاف ${adds.length} سؤالًا جديدًا إلى بنوك الدروس دون حذف أو استبدال أي سؤال أو نتيجة.`];
+ const lines=[`سيُضاف ${adds.length} سؤالًا جديدًا و${goalAdds.length} هدفًا تعليميًا دون حذف أي سؤال أو هدف أو نتيجة.`];
  if(duplicates)lines.push(`${duplicates} سؤالًا مطابقًا لسؤال موجود في الدرس (النص والخيارات والإجابة والصور والشرح والصعوبة والزمن والنقاط) سيُتجاوز.`);
  if(similar)lines.push(`${similar} سؤالًا بنص وخيارات سؤال موجود نفسها لكن بصور أو خصائص مختلفة؛ سيُضاف كسؤال مستقل لا كمكرر.`);
  if(conflicts.length){lines.push(`⚠ ${conflicts.length} تعارضًا: المعرّف نفسه بمحتوى مختلف. لن يُستبدل الموجود؛ ستُضاف الأسئلة الواردة كنسخ جديدة بمعرّف جديد لتراجعها:`);conflicts.slice(0,5).forEach(c=>lines.push(`• الموجود: «${c.old}» ← الوارد: «${c.text}»`));if(conflicts.length>5)lines.push(`… و${conflicts.length-5} أخرى.`)}
  if(overCap)lines.push(`${overCap} سؤالًا لن يُضاف لامتلاء البنك (150 سؤالًا لكل درس و50 للركلة الفاصلة).`);
  if(badScopes)lines.push(`${badScopes} درسًا غير معروف سيُتجاوز.`);
  const note=sanitizeNote();if(note)lines.push(note);
- if(!adds.length){toast(lines.join(' '),true);return}
+ if(!adds.length&&!goalAdds.length){toast(lines.join(' '),true);return}
  if(!confirm(lines.join('\n')+'\n\nمتابعة؟'))return;
  if(!safetyBackup('before-questions-merge'))return toast('تعذّر تأمين نسخة من البيانات الحالية، فأُلغي الدمج.',true);
  stopTimer();
+ for(const item of goalAdds)(state.curriculum.objectives[item.key]??=[]).push(item.goal);
  for(const a of adds){
   const slot=state.curriculum.slots[a.mode][a.key]||(state.curriculum.slots[a.mode][a.key]=blankWorkspace());
   slot[a.field].push(a.q);
  }
  if(state.curriculum.slots[state.settings.mode][currentCurrScope()])restoreWorkspace(state,state.curriculum.slots[state.settings.mode][currentCurrScope()]);
- if(save()){render();toast(`أُضيف ${adds.length} سؤالًا إلى بنوك الدروس.`)}
+ if(save()){render();toast(`أُضيف ${adds.length} سؤالًا و${goalAdds.length} هدفًا إلى بنوك الدروس.`)}
 }
 
 
@@ -1081,7 +1141,7 @@ const SCHOOL_ROSTER_BASELINE=[];
 const initial=()=>({settings:{title:'ركلة ترجيحية',mode:'تكويني',playStyle:'simultaneous',count:4,groups:['الروّاد','المبدعون','العباقرة','المستكشفون','المتميّزون','الأبطال','الفائزون','النجوم','المتفوقون','النخبة'],sounds:true,defaultTime:30,defaultPoints:10},questions:structuredClone(demoQuestions),answers:{},finalized:{},currentIndex:0,timeLeft:30,remainingTimes:{},started:{},finished:false,activeTab:'live',locked:{},tieQuestions:structuredClone(demoTieQuestions),tieBreak:{history:[],active:null},workspaces:null,studentArea:defaultStudentArea()});
 function cleanQuestion(q,i){
  if(!q||!Array.isArray(q.options)||q.options.length!==4||!q.text)return null;
- return {id:String(q.id||'q'+i).slice(0,48),topic:String(q.topic||'سؤال عام').slice(0,80),text:String(q.text).slice(0,1500),options:q.options.map(o=>String(o??'').slice(0,500)),optionImages:Array.from({length:4},(_,j)=>isValidDataImage(q.optionImages?.[j])?q.optionImages[j]:''),correct:clamp(Number(q.correct)||0,0,3),time:clampLogged(q.time,30,5,300,String(q.id||'q'+i)),points:clampLogged(q.points,10,1,1000,String(q.id||'q'+i)),difficulty:['سهل','متوسط','صعب'].includes(q.difficulty)?q.difficulty:'متوسط',originId:String(q.originId||'').slice(0,48),explanation:String(q.explanation||'').slice(0,1200),image:typeof q.image==='string'&&q.image.length<2000000&&/^data:image\/(png|jpeg|webp|gif|svg\+xml);/i.test(q.image)?q.image:''};
+ return {id:String(q.id||'q'+i).slice(0,48),topic:String(q.topic||'سؤال عام').slice(0,80),text:String(q.text).slice(0,1500),options:q.options.map(o=>String(o??'').slice(0,500)),optionImages:Array.from({length:4},(_,j)=>isValidDataImage(q.optionImages?.[j])?q.optionImages[j]:''),correct:clamp(Number(q.correct)||0,0,3),time:clampLogged(q.time,30,5,300,String(q.id||'q'+i)),points:clampLogged(q.points,10,1,1000,String(q.id||'q'+i)),difficulty:['سهل','متوسط','صعب'].includes(q.difficulty)?q.difficulty:'متوسط',objectiveId:typeof q.objectiveId==='string'?q.objectiveId.slice(0,64):'',originId:String(q.originId||'').slice(0,48),explanation:String(q.explanation||'').slice(0,1200),image:typeof q.image==='string'&&q.image.length<2000000&&/^data:image\/(png|jpeg|webp|gif|svg\+xml);/i.test(q.image)?q.image:''};
 }
 const ASSESSMENTS=['تكويني','ختامي'];
 const CURR_UNSORTED='غير مصنفة';
@@ -1144,7 +1204,7 @@ function classifyArchived(ids){
   if(mapped.has(id)){duplicates++;continue}
   if(target.questions.length>=150){capacity++;continue}
   const q=archive.find(q=>q.id===id);if(!q)continue;
-  const clone=structuredClone(q);clone.id='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);clone.originId=id;
+  const clone=structuredClone(q);clone.id='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);clone.originId=id;clone.objectiveId='';
   target.questions.push(clone);mapped.add(id);added++;
  }
  if(currentCurrScope()!==to)state.curriculum.slots[mode][to]=target;
@@ -1169,11 +1229,29 @@ function curriculumLessonNumbers(g,u){const shown=new Set((VERIFIED_PHYSICS_CURR
 
 function currKey(grade,unit,lesson){return `${grade}|${Number(unit)}|${Number(lesson)}`}
 function validCurrKey(key){if(key===CURR_UNSORTED)return true;const m=/^(9|10)\|(\d{1,2})\|(\d{1,2})$/.exec(String(key));return !!m&&Number(m[2])>=1&&Number(m[2])<=CURR_UNIT_COUNT&&Number(m[3])>=1&&Number(m[3])<=CURR_LESSON_COUNT}
-function newCurriculum(){return {version:1,selected:{تكويني:CURR_FIRST,ختامي:CURR_FIRST},slots:{تكويني:{},ختامي:{}},labels:{},lastLesson:CURR_FIRST}}
+function newCurriculum(){return {version:1,selected:{تكويني:CURR_FIRST,ختامي:CURR_FIRST},slots:{تكويني:{},ختامي:{}},labels:{},objectives:{},lastLesson:CURR_FIRST}}
 function currParts(key){const p=validCurrKey(key)&&key!==CURR_UNSORTED?key.split('|'):CURR_FIRST.split('|');return {grade:p[0],unit:Number(p[1]),lesson:Number(p[2])}}
 function currUnitLabel(g,u){return state.curriculum?.labels?.[`u|${g}|${u}`]||VERIFIED_PHYSICS_CURRICULUM[g]?.[u-1]?.unit||`الوحدة ${CURR_ORDINAL[u]}`}
 function currLessonLabel(g,u,l){return state.curriculum?.labels?.[`l|${g}|${u}|${l}`]||VERIFIED_PHYSICS_CURRICULUM[g]?.[u-1]?.lessons?.[l-1]||`الدرس ${CURR_ORDINAL[l]}`}
 function currScopeLabel(key){if(key===CURR_UNSORTED)return 'أسئلة غير مصنفة';const p=currParts(key);return `الصف ${p.grade==='9'?'التاسع':'العاشر'} • ${currUnitLabel(p.grade,p.unit)} • ${currLessonLabel(p.grade,p.unit,p.lesson)}`}
+// Educational objectives are shared by the formative and summative banks of the same lesson.
+const LESSON_OBJECTIVE_LIMIT=12,LESSON_OBJECTIVE_TEXT_LIMIT=180;
+function cleanLessonObjectives(raw){
+ const out=[],seen=new Set(),texts=new Set();
+ for(const value of Array.isArray(raw)?raw.slice(0,LESSON_OBJECTIVE_LIMIT*2):[]){
+  const id=String(value?.id||'').slice(0,64),title=String(value?.text||'').trim().slice(0,LESSON_OBJECTIVE_TEXT_LIMIT);
+  if(!/^lo_[A-Za-z0-9]+$/.test(id)||!title||seen.has(id)||texts.has(title))continue;
+  out.push({id,text:title});seen.add(id);texts.add(title);
+  if(out.length>=LESSON_OBJECTIVE_LIMIT)break;
+ }
+ return out;
+}
+function lessonObjectives(key=state.curriculum.lastLesson){
+ return validCurrKey(key)&&key!==CURR_UNSORTED?(state.curriculum?.objectives?.[key]||[]):[];
+}
+function linkedLessonObjective(id,key=currentCurrScope()){
+ return lessonObjectives(key).find(x=>x.id===id)||null;
+}
 function normalizeCurriculum(raw,oldWorkspaces){
  const out=newCurriculum();
  if(!raw||raw.version!==1){
@@ -1182,6 +1260,13 @@ function normalizeCurriculum(raw,oldWorkspaces){
  }
  if(raw.labels&&typeof raw.labels==='object'&&!Array.isArray(raw.labels)){
   for(const [key,value] of Object.entries(raw.labels))if(/^[ul]\|(9|10)\|\d{1,2}(\|\d{1,2})?$/.test(key))out.labels[key]=String(value).slice(0,95);
+ }
+ if(raw.objectives&&typeof raw.objectives==='object'&&!Array.isArray(raw.objectives)){
+  for(const [key,values] of Object.entries(raw.objectives).slice(0,220)){
+   if(!validCurrKey(key)||key===CURR_UNSORTED)continue;
+   const cleaned=cleanLessonObjectives(values);
+   if(cleaned.length)out.objectives[key]=cleaned;
+  }
  }
  out.lastLesson=validCurrKey(raw.lastLesson)&&raw.lastLesson!==CURR_UNSORTED?raw.lastLesson:CURR_FIRST;
  for(const mode of ASSESSMENTS){
@@ -1270,7 +1355,7 @@ function copyArchivedQuestionToLesson(id){
  if(!confirm('نسخ السؤال إلى '+currScopeLabel(dest)+'؟ يبقى الأصل في «غير مصنفة» وتبقى نتائجه القديمة كما هي.'))return;
  const cloned=structuredClone(question);
  cloned.id='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
- cloned.originId=id;
+ cloned.originId=id;cloned.objectiveId='';
  slot[which].push(cloned);
  state.curriculum.slots[targetMode][dest]=slot;
  save();render();toast('نُسخ السؤال إلى '+currScopeLabel(dest)+' وحُفظ الأصل بنتائجه.');
@@ -1491,12 +1576,48 @@ function teamsPanel(q){if(isTurns()){
  }const done=isDone(q.id);const positions=scores();return `<aside class="card"><div class="card-head"><div><div class="card-title">${ICONS.cup} إجابات المجموعات</div><div class="caption" style="margin-top:6px">${isSummative()?'سجّل بطاقات الخروج دون كشف التصحيح':'سجّل اختيار كل مجموعة قبل كشف الإجابة'}</div></div><span class="pill">${state.settings.count} مجموعات</span></div><div class="card-pad"><div class="side-note">${done?'انتهى التصحيح، وثُبّتت نقاط المجموعات لهذا السؤال.':isSummative()?'ابدأ الوقت وسجّل إجابات بطاقات الخروج من نافذة المعلم؛ تُقفل تلقائيًا بانتهائه ولا تظهر الإجابات الصحيحة حتى نهاية المسابقة.':'ابدأ الوقت، ثم سجّل الإجابات من لوحة المعلم الخاصة قبل انتهاء الزمن. على السبورة يظهر فقط عدد المجموعات التي أجابت. تُقفل الإجابات تلقائيًا عند انتهاء الوقت.'}</div><div class="teams-list">${Array.from({length:state.settings.count},(_,i)=>{const a=ansFor(q.id)[i];const right=done&&a===q.correct;const wrong=done&&Number.isInteger(a)&&a>=0&&a!==q.correct;const rowScore=positions.find(t=>t.i===i)?.score||0;return `<div class="team-row ${!done&&i===activeTeam?'current-team':''} ${done?(right?'correct-team':wrong?'wrong-team':''):(Number.isInteger(a)&&a>=0?'has-answer':'')}"><div class="team-header"><button type="button" class="team-identity team-select" data-action="selectTeam" data-team="${i}" ${done?'disabled':''} aria-label="اختيار مجموعة ${esc(state.settings.groups[i])}"><div class="team-avatar" style="background:${COLORS[i]}">${num(i+1)}</div><span class="team-name">${esc(state.settings.groups[i])}</span></button><span class="team-score">${isSummative()&&!state.finished?'•••':num(rowScore)} <small>نقطة</small></span></div>${done?`<div class="team-outcome"><span>${a===undefined||a===-1?'لم تُسجل إجابة':`الإجابة ${LETTERS[a]}`}</span><span style="color:${right?'#368653':wrong?'#b65f51':'#869188'}">${right?'صحيحة +'+num(q.points):wrong?'غير صحيحة +0':'دون نقاط'}</span></div>`:`<div class="mini-choices">${[0,1,2,3,-1].map(j=>`<button class="choice-mini ${a===j?'selected':''} ${j===-1?'none':''}" data-action="answer" data-team="${i}" data-choice="${j}" ${qIsLocked(q)||!isMainStarted(q)?'disabled':''} aria-label="${j===-1?'بدون إجابة':'الخيار '+LETTERS[j]} للمجموعة ${esc(state.settings.groups[i])}">${j===-1?'لا إجابة':LETTERS[j]}</button>`).join('')}</div>`}</div>`}).join('')}</div></div><div class="side-footer">آلية النقاط: الإجابة الصحيحة تمنح نقاط السؤال، والخاطئة أو المتروكة تمنح 0. لا تُخصم نقاط.</div></aside>`}
 function livePage(){if(!state.questions.length)return `${runStatusStrip()}<section class="competition-empty" aria-label="الاستعداد للمسابقة"><div class="competition-empty-icon">${ICONS.layers}</div><h2>لا توجد أسئلة جاهزة لهذه المسابقة</h2><p>جهّز أسئلة الدرس من قسم «إعداد الأسئلة»، ثم عُد إلى المسابقة لبدء النشاط.</p><button type="button" class="button primary" data-action="tab" data-tab="bank">${ICONS.book} الانتقال إلى إعداد الأسئلة</button></section>`;const q=qCurrent();return `${runStatusStrip()}${isTurns()&&!turnReadiness().ready?`<div class="warning turn-warning" role="alert">لا يمكن بدء التناوب قبل موازنة الأسئلة: ${esc(turnReadiness().message)} <button class="button white sm" data-action="tab" data-tab="bank">بنك الأسئلة</button></div>`:''}<div class="content-grid">${mainQuestion(q)}${teamsPanel(q)}</div>${studentTeamPanel()}`}
 function optionPreviewHTML(src,i){return src?`<div class="option-preview"><img src="${esc(src)}" alt="الصورة المرفقة للاختيار ${LETTERS[i]}"><button type="button" class="button danger sm" data-action="removeOptionImage" data-choice="${i}">إزالة الصورة</button></div>`:`<span class="option-empty">لا توجد صورة لهذا الاختيار</span>`}
+
+/* Minimal lesson-objective workflow: one registry per lesson, shared across assessments. */
+function lessonObjectivesCard(){
+ const key=state.curriculum.lastLesson,goals=lessonObjectives(key),other=state.settings.mode==='تكويني'?'ختامي':'تكويني';
+ const otherSlot=state.curriculum.slots[other]?.[key]||blankWorkspace();
+ const questionLists=[...state.questions,...state.tieQuestions,...otherSlot.questions,...otherSlot.tieQuestions];
+ const rows=goals.map((o,i)=>{
+  const related=questionLists.filter(q=>q.objectiveId===o.id).length;
+  return `<div class="lesson-objective-row"><span class="lesson-objective-index">${num(i+1)}</span><span class="lesson-objective-text">${esc(o.text)}</span><span class="lesson-objective-count">${num(related)} سؤالًا مرتبطًا</span><button type="button" class="button white sm" data-action="removeLessonObjective" data-id="${esc(o.id)}" aria-label="حذف الهدف ${esc(o.text)}" ${related?'disabled title="افصل الأسئلة المرتبطة قبل حذف الهدف"':''}>${ICONS.trash} حذف</button></div>`;
+ }).join('');
+ return `<section class="card lesson-objectives-card" aria-label="أهداف الدرس"><div class="card-head"><h3 class="card-title">${ICONS.target} أهداف الدرس التعليمية</h3><span class="pill">${num(goals.length)} من ${num(LESSON_OBJECTIVE_LIMIT)}</span></div><div class="card-pad"><p class="caption">أضف أهداف هذا الدرس مرة واحدة، وستظهر في التقويمين التكويني والختامي. لا تُصنّف الأسئلة تلقائيًا.</p><form id="lessonObjectiveForm" class="lesson-objective-form"><label for="newLessonObjective">إضافة هدف قابل للقياس</label><div class="lesson-objective-input"><input id="newLessonObjective" name="objectiveText" maxlength="${LESSON_OBJECTIVE_TEXT_LIMIT}" placeholder="مثال: يحسب ثابت الزنبرك من القوة والاستطالة" required ${goals.length>=LESSON_OBJECTIVE_LIMIT?'disabled':''}><button class="button primary sm" type="submit" ${goals.length>=LESSON_OBJECTIVE_LIMIT?'disabled':''}>${ICONS.plus} إضافة الهدف</button></div></form><div class="lesson-objectives-list">${rows||'<p class="caption">لا توجد أهداف مسجلة بعد. ابدأ بإضافة هدف من دليل المعلم أو خطة الدرس.</p>'}</div><p class="caption lesson-objective-disclaimer">الأسئلة غير المرتبطة بهدف تبقى قابلة للاستخدام، لكنها لا تدخل في مؤشر الأهداف حتى يربطها المعلم.</p></div></section>`;
+}
+function addLessonObjective(form){
+ const key=state.curriculum.lastLesson;
+ if(currentCurrScope()!==key){toast('افتح أسئلة الدرس المحدد قبل إضافة هدف.',true);return}
+ if(contextChangeBlocker()){toast('أنهِ السؤال أو المحاولة الجارية قبل تعديل الأهداف.',true);return}
+ const title=String(new FormData(form).get('objectiveText')||'').trim();
+ if(!title||title.length>LESSON_OBJECTIVE_TEXT_LIMIT){toast('أدخل هدفًا واضحًا لا يزيد على 180 حرفًا.',true);return}
+ const goals=state.curriculum.objectives[key]||(state.curriculum.objectives[key]=[]);
+ if(goals.length>=LESSON_OBJECTIVE_LIMIT){toast('وصلت إلى الحد الأعلى للأهداف في الدرس.',true);return}
+ if(goals.some(o=>o.text===title)){toast('هذا الهدف مسجل في الدرس بالفعل.',true);return}
+ goals.push({id:'lo_'+Date.now().toString(36)+Math.random().toString(36).slice(2,10),text:title});
+ if(save()){render();toast('أُضيف هدف الدرس، ويمكن ربط الأسئلة به الآن.')}
+}
+function removeLessonObjective(id){
+ const key=state.curriculum.lastLesson,goals=lessonObjectives(key);
+ if(currentCurrScope()!==key||contextChangeBlocker())return toast('أغلق العمل الجاري وافتح الدرس لتعديل أهدافه.',true);
+ const target=goals.find(o=>o.id===id);if(!target)return;
+ const referenced=[...state.questions,...state.tieQuestions,...ASSESSMENTS.flatMap(m=>Object.values(state.curriculum.slots[m]||{}).flatMap(w=>[...(w.questions||[]),...(w.tieQuestions||[])]))].some(q=>q.objectiveId===id);
+ const usedByStudent=state.studentArea.attempts.some(a=>a.objectiveId===id);
+ if(referenced||usedByStudent)return toast('الهدف مرتبط بأسئلة أو محاولات محفوظة؛ افصل الارتباطات قبل حذفه.',true);
+ if(!confirm('حذف الهدف «'+target.text+'» من هذا الدرس؟'))return;
+ state.curriculum.objectives[key]=goals.filter(o=>o.id!==id);
+ if(save()){render();toast('حُذف الهدف غير المستخدم.')}
+}
+
 function questionForm(){
  const q=[...state.questions,...state.tieQuestions].find(q=>q.id===editId)||null,opts=q?.options||['','','',''];
  const isTie=!!(q&&state.tieQuestions.some(x=>x.id===q.id)),correct=q?.correct??0;
  const optionRows=opts.map((o,i)=>{const image=editOptionImages[i]!==null?editOptionImages[i]:(q?.optionImages?.[i]||'');return `<div class="option-line"><label class="correct-pick" title="تحديد الإجابة الصحيحة"><input type="radio" name="correct" value="${i}" ${i===correct?'checked':''} aria-label="الخيار ${LETTERS[i]} هو الصحيح"><span class="correct-caption">صحيحة</span><span class="correct-status">صحيح</span></label><span class="answer-letter">${LETTERS[i]}</span><input name="o${i}" maxlength="500" placeholder="الخيار ${LETTERS[i]}" value="${esc(o)}"><label for="optionImage${i}" class="mini-image" title="إضافة صورة لهذا الخيار">${ICONS.imagePlus} صورة<input id="optionImage${i}" type="file" data-option-image="${i}" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="صورة الاختيار ${LETTERS[i]}"></label><div id="optionPreview${i}" class="option-preview-area ${image?'has-image':'no-image'}">${optionPreviewHTML(image,i)}</div></div>`}).join('');
  const hasMore=!!(q&&(isTie||q.image||q.explanation));
- return `<div class="card"><div class="card-head"><h3 class="card-title">${ICONS.plus} ${q?'تعديل السؤال':'سؤال جديد'}</h3><span class="pill">${esc(state.settings.mode)}</span></div><form id="questionForm" class="card-pad"><div class="field"><label>نص السؤال *</label><textarea name="text" required placeholder="اكتب السؤال...">${esc(q?.text||'')}</textarea></div><div class="field"><label>الخيارات · حدّد الدائرة بجانب الإجابة الصحيحة</label><div class="option-lines">${optionRows}</div></div><div class="field-row three"><div class="field"><label>الصعوبة</label><select name="difficulty">${['سهل','متوسط','صعب'].map(level=>`<option value="${level}" ${level===(q?.difficulty||'متوسط')?'selected':''}>${level}</option>`).join('')}</select></div><div class="field"><label>الزمن (ثانية)</label><input type="text" inputmode="numeric" autocomplete="off" name="time" data-range="5-300" placeholder="5 – 300" value="${q?.time??state.settings.defaultTime}" required></div><div class="field"><label>النقاط</label><input type="text" inputmode="numeric" autocomplete="off" name="points" data-range="1-1000" placeholder="1 – 1000" value="${q?.points??state.settings.defaultPoints}" required></div></div><details class="more-options" ${hasMore?'open':''}><summary>خيارات إضافية: صورة للسؤال، شرح، ركلة فاصلة، الموضوع</summary><div class="field"><label>صورة للسؤال (اختياري)</label><label class="image-drop" for="qImage">إرفاق صورة (PNG/JPG/WebP/GIF) · تُضغط تلقائيًا<input id="qImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="صورة السؤال"></label></div><div id="imagePreviewArea">${(editImage??q?.image)?`<img class="image-preview" src="${esc(editImage??q?.image)}" alt="الصورة المرفقة"><button type="button" class="button danger sm" data-action="removeImage">${ICONS.trash} حذف الصورة</button>`:''}</div><div class="field"><label>شرح الإجابة بعد الكشف</label><textarea name="explanation" placeholder="تعليل قصير للتغذية الراجعة">${esc(q?.explanation||'')}</textarea></div><div class="field-row"><div class="field"><label>نوع السؤال</label><select name="purpose"><option value="main" ${!isTie?'selected':''}>أساسي في المسابقة</option><option value="tie" ${isTie?'selected':''}>احتياطي لركلة فاصلة</option></select></div><div class="field"><label>الموضوع</label><input name="topic" maxlength="80" value="${esc(q?.topic||'علوم | سؤال جديد')}" placeholder="الفيزياء | الحركة"></div></div></details><div class="action-group"><button class="button primary" type="submit">${q?ICONS.check:ICONS.plus} ${q?'حفظ التعديل':'إضافة السؤال'}</button>${q?'<button class="button white" type="button" data-action="clearEditor">${ICONS.close} إلغاء التعديل</button>':''}</div></form></div>`;
+ return `<div class="card"><div class="card-head"><h3 class="card-title">${ICONS.plus} ${q?'تعديل السؤال':'سؤال جديد'}</h3><span class="pill">${esc(state.settings.mode)}</span></div><form id="questionForm" class="card-pad"><div class="field"><label>نص السؤال *</label><textarea name="text" required placeholder="اكتب السؤال...">${esc(q?.text||'')}</textarea></div><div class="field"><label for="questionObjective">الهدف التعليمي الذي يقيسه السؤال</label><select id="questionObjective" name="objectiveId"><option value="">— غير مرتبط بهدف —</option>${lessonObjectives(currentCurrScope()).map(o=>`<option value="${esc(o.id)}" ${q?.objectiveId===o.id?'selected':''}>${esc(o.text)}</option>`).join('')}</select><small class="caption">اربط السؤال بهدف محدد ليُحتسب ضمن مؤشر تحقق الأهداف.</small></div><div class="field"><label>الخيارات · حدّد الدائرة بجانب الإجابة الصحيحة</label><div class="option-lines">${optionRows}</div></div><div class="field-row three"><div class="field"><label>الصعوبة</label><select name="difficulty">${['سهل','متوسط','صعب'].map(level=>`<option value="${level}" ${level===(q?.difficulty||'متوسط')?'selected':''}>${level}</option>`).join('')}</select></div><div class="field"><label>الزمن (ثانية)</label><input type="text" inputmode="numeric" autocomplete="off" name="time" data-range="5-300" placeholder="5 – 300" value="${q?.time??state.settings.defaultTime}" required></div><div class="field"><label>النقاط</label><input type="text" inputmode="numeric" autocomplete="off" name="points" data-range="1-1000" placeholder="1 – 1000" value="${q?.points??state.settings.defaultPoints}" required></div></div><details class="more-options" ${hasMore?'open':''}><summary>خيارات إضافية: صورة للسؤال، شرح، ركلة فاصلة، الموضوع</summary><div class="field"><label>صورة للسؤال (اختياري)</label><label class="image-drop" for="qImage">إرفاق صورة (PNG/JPG/WebP/GIF) · تُضغط تلقائيًا<input id="qImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="صورة السؤال"></label></div><div id="imagePreviewArea">${(editImage??q?.image)?`<img class="image-preview" src="${esc(editImage??q?.image)}" alt="الصورة المرفقة"><button type="button" class="button danger sm" data-action="removeImage">${ICONS.trash} حذف الصورة</button>`:''}</div><div class="field"><label>شرح الإجابة بعد الكشف</label><textarea name="explanation" placeholder="تعليل قصير للتغذية الراجعة">${esc(q?.explanation||'')}</textarea></div><div class="field-row"><div class="field"><label>نوع السؤال</label><select name="purpose"><option value="main" ${!isTie?'selected':''}>أساسي في المسابقة</option><option value="tie" ${isTie?'selected':''}>احتياطي لركلة فاصلة</option></select></div><div class="field"><label>الموضوع</label><input name="topic" maxlength="80" value="${esc(q?.topic||'علوم | سؤال جديد')}" placeholder="الفيزياء | الحركة"></div></div></details><div class="action-group"><button class="button primary" type="submit">${q?ICONS.check:ICONS.plus} ${q?'حفظ التعديل':'إضافة السؤال'}</button>${q?'<button class="button white" type="button" data-action="clearEditor">${ICONS.close} إلغاء التعديل</button>':''}</div></form></div>`;
 }
 function bankPage(){
  const archival=archivedQuestions(),dest=state.curriculum.lastLesson,lessonScope=currentCurrScope()===dest;
@@ -1508,7 +1629,7 @@ function bankPage(){
  if(bankDeskView==='organize')return entry+head+tabs+curriculumDeskCard();
  const items=(arr)=>arr.map((q,i)=>`<div class="bank-item ${editId===q.id?'editing':''}"><div class="team-identity"><span class="bank-num">${num(i+1)}</span><div><div class="bank-text">${esc(q.text)}</div><div class="bank-details">${num(q.time)} ث · ${num(q.points)} نقطة · <span class="level-tag ${q.difficulty||'متوسط'}">${esc(q.difficulty||'متوسط')}</span> ${q.optionImages?.some(Boolean)||q.image?'· مصوّر':''}</div></div></div><div class="bank-buttons"><button class="button white sm" data-action="editQ" data-id="${esc(q.id)}">${ICONS.pencil} تعديل</button><button class="button soft sm" data-action="copyToOther" data-id="${esc(q.id)}" title="نسخة إلى التقويم ${state.settings.mode==='تكويني'?'الختامي':'التكويني'} في الدرس نفسه">${ICONS.copy} نسخ</button><button class="button danger sm" data-action="deleteQ" data-id="${esc(q.id)}">${ICONS.trash} حذف</button></div></div>`).join('');
  if(!lessonScope)return entry+head+tabs+`<div class="lesson-guard">الدرس المختار في الشريط غير مفتوح الآن. <button class="button primary sm" data-action="openCurrLesson">فتح أسئلة هذا الدرس</button></div>`;
- return entry+head+tabs+`<div class="lesson-layout"><section class="lesson-list ${!state.questions.length&&!state.tieQuestions.length?'is-empty':''}"><div class="lesson-list-header"><h3>أسئلة الدرس</h3>${state.questions.length?`<span class="pill">${num(state.questions.length)}</span>`:""}</div>${items(state.questions)||`<div class="desk-empty">${pending?`لديك ${num(pending)} سؤالًا قديمًا غير مصنف. <button class="link-button" data-action="bankViewOrganize">انسخ منها إلى هذا الدرس</button> أو أضف سؤالًا جديدًا.`:'لا أسئلة بعد. أضف سؤالًا من النموذج. <button type="button" class="link-button" data-action="bankViewOrganize">انسخ من القديمة</button>'}</div>`}${state.tieQuestions.length?`<div class="lesson-list-header"><h3>أسئلة الركلة الفاصلة</h3><span class="pill amber">${num(state.tieQuestions.length)}</span></div>${items(state.tieQuestions)}`:''}</section><div class="lesson-editor" id="lessonEditor">${questionForm()}</div></div>`;
+ return entry+head+tabs+lessonObjectivesCard()+`<div class="lesson-layout"><section class="lesson-list ${!state.questions.length&&!state.tieQuestions.length?'is-empty':''}"><div class="lesson-list-header"><h3>أسئلة الدرس</h3>${state.questions.length?`<span class="pill">${num(state.questions.length)}</span>`:""}</div>${items(state.questions)||`<div class="desk-empty">${pending?`لديك ${num(pending)} سؤالًا قديمًا غير مصنف. <button class="link-button" data-action="bankViewOrganize">انسخ منها إلى هذا الدرس</button> أو أضف سؤالًا جديدًا.`:'لا أسئلة بعد. أضف سؤالًا من النموذج. <button type="button" class="link-button" data-action="bankViewOrganize">انسخ من القديمة</button>'}</div>`}${state.tieQuestions.length?`<div class="lesson-list-header"><h3>أسئلة الركلة الفاصلة</h3><span class="pill amber">${num(state.tieQuestions.length)}</span></div>${items(state.tieQuestions)}`:''}</section><div class="lesson-editor" id="lessonEditor">${questionForm()}</div></div>`;
 }
 function recoveryNotice(){const n=listRecoveryCopies().length;return n?`<div class="lesson-guard">توجد ${n} نسخة استرداد/احتياط محفوظة في هذا المتصفح (من بيانات تالفة أو قبل استيراد). <button class="button soft sm" data-action="downloadRecovery">تنزيل النسخ</button></div>`:''}
 // مكان واحد للنسخ الاحتياطي والاستعادة (كان التصدير مكررًا في ثلاث صفحات ولا يوجد زر استيراد ظاهر).
@@ -1602,7 +1723,7 @@ function openPrintReport(){
 function podiumHTML(top){const podium=[top[1],top[0],top[2]];return `<div class="podium">${podium.map((p,i)=>p?`<div class="podium-item ${p.rank===1?'first':p.rank===2?'second':'third'}"><div class="podium-crown">${p.rank===1?'🏆':p.rank===2?'🥈':'🥉'}</div><div class="podium-place">${p.rank===1?'المركز الأول':`المركز ${num(p.rank)}`}</div><div class="podium-name">${esc(p.name)}</div><div class="podium-score">${num(p.score)} <small style="font-size:11px">نقطة</small></div></div>`:'<div></div>').join('')}</div>`}
 function rankingHTML(){const rows=ranks();const max=Math.max(1,...rows.map(r=>r.score));return `<div class="scoreboard">${rows.map(r=>`<div class="scoreline"><div class="place-circle">${num(r.rank)}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="score-name">${esc(r.name)} <small class="score-sub">صحيحة ${num(r.correct)} · خاطئة ${num(r.wrong)}</small></span><span class="score-value">${num(r.score)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${(r.score/max)*100}%"></div></div></div></div>`).join('')}</div>`}
 function answerReport(){const rows=state.questions.filter(q=>isDone(q.id));if(!rows.length)return '<div class="empty-state">تظهر سجلات الإجابات بعد تصحيح أول سؤال.</div>';return `<div class="report-scroll"><table class="report-table"><thead><tr><th>السؤال</th>${state.settings.groups.slice(0,state.settings.count).map(g=>`<th>${esc(g)}</th>`).join('')}</tr></thead><tbody>${rows.map((q,idx)=>`<tr><td>${esc(q.topic)} · ${num(state.questions.indexOf(q)+1)}</td>${Array.from({length:state.settings.count},(_,i)=>{const a=ansFor(q.id)[i];return `<td style="color:${a===q.correct?'#328354':a===undefined?'#8f988f':'#b6604f'};font-weight:800">${a===undefined||a===-1?'—':LETTERS[a]} ${a===q.correct?'✓':a===undefined||a===-1?'':'×'}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`}
-function resultsPage(){return resultsSwitchHTML()+(resultsView==='individual'?individualResultsView():groupResultsView())+lessonReviewHTML()}
+function resultsPage(){return resultsSwitchHTML()+(resultsView==='individual'?individualResultsView():groupResultsView())+objectiveResultsHTML(resultsView)+lessonReviewHTML()}
 function groupResultsView(){
  if(isSummative()&&!state.finished)return `<div class="card"><div class="card-pad"><div class="empty-state"><h2>نتائج بطاقات الخروج مخفية حتى نهاية المسابقة</h2><p>اكتمل تسجيل ${num(state.questions.filter(q=>qIsLocked(q)).length)} من ${num(state.questions.length)} أسئلة. انتقل إلى «التشغيل» لاستكمال الأسئلة ثم إعلان النتائج.</p><button class="button primary" data-action="tab" data-tab="live">${ICONS.play} عودة للتشغيل</button></div></div></div>`;
  const rows=ranks(),top=rows[0],winners=rows.filter(r=>r.score===top?.score);
@@ -1610,6 +1731,56 @@ function groupResultsView(){
  const head=`<div class="section-heading"><div><h2>نتائج المسابقة الجماعية ${esc(state.settings.mode)}</h2><p>نقاط المجموعات فقط؛ مستقلة عن التقويم الفردي وعن التقويم ${isSummative()?'التكويني':'الختامي'}.</p></div>${actions}</div>`;
  if(!completed())return head+`<div class="card"><div class="card-pad"><div class="empty-state"><h3>لم تُصحَّح أسئلة بعد</h3><p>يظهر الترتيب والتقرير بعد تصحيح أول سؤال في المسابقة الجماعية.</p><button class="button primary" data-action="tab" data-tab="live">${ICONS.play} الذهاب إلى التشغيل</button></div></div></div>`+teamParticipationHTML();
  return head+`<div class="card"><div class="card-head"><h3 class="card-title">${ICONS.cup} الترتيب</h3><span class="pill amber">${num(completed())} من ${num(state.questions.length)} أسئلة • ${winners.length>1?'تعادل على الصدارة: ':'الأول: '}${winners.map(r=>esc(r.name)).join('، ')}</span></div><div class="card-pad">${rankingHTML()}</div></div>${tieBoxHTML()}${reportSection()}<div class="card" style="margin-top:18px"><div class="card-head"><h3 class="card-title">${ICONS.book} سجل اختيارات المجموعات</h3><span class="caption">✓ صحيحة | × خاطئة | — لم يجب</span></div><div class="card-pad">${answerReport()}</div></div>${teamParticipationHTML()}`;
+}
+
+/* Objective evidence: group choices never become student mastery records. */
+function objectiveResponseMetrics(view='group',key=currentCurrScope()){
+ const goals=lessonObjectives(key);
+ const result=goals.map(o=>({id:o.id,text:o.text,questions:0,correct:0,responses:0,skipped:0,rate:null}));
+ const byId=new Map(result.map(x=>[x.id,x]));
+ if(view==='group'){
+  for(const q of state.questions.filter(q=>isDone(q.id))){
+   const item=byId.get(q.objectiveId);if(!item)continue;
+   item.questions++;
+   for(const i of candidatesFor(q)){
+    const ans=ansFor(q.id)[i];
+    if(ans===-1){item.skipped++;continue}
+    if(!Number.isInteger(ans)||ans<0||ans>3)continue;
+    item.responses++;if(ans===q.correct)item.correct++;
+   }
+  }
+ }else{
+  const cls=reviewClass(state.settings.mode);
+  if(cls){
+   const seen=new Map();
+   for(const a of state.studentArea.attempts){
+    if(a.assessment!==state.settings.mode||a.classId!==cls.id||a.lessonKey!==key)continue;
+    const item=byId.get(a.objectiveId);if(!item)continue;
+    if(a.answer===-1){item.skipped++;continue}
+    if(!Number.isInteger(a.answer)||a.answer<0||a.answer>3)continue;
+    item.responses++;if(a.correct===true)item.correct++;
+    (seen.get(item.id)||seen.set(item.id,new Set()).get(item.id)).add(a.questionId);
+   }
+   for(const item of result)item.questions=seen.get(item.id)?.size||0;
+  }
+ }
+ for(const item of result)item.rate=item.responses?Math.round(item.correct/item.responses*100):null;
+ return result;
+}
+function objectiveResultsHTML(view='group'){
+ const key=currentCurrScope(),goals=lessonObjectives(key);
+ if(key===CURR_UNSORTED||!goals.length)return '';
+ const mode=state.settings.mode;
+ if(mode==='ختامي'&&(view==='group'&&!state.finished||view==='individual'&&!state.studentArea.assessmentFinished.ختامي))return '';
+ const rows=objectiveResponseMetrics(view,key);
+ const group=view==='group';
+ const linkedIds=new Set(goals.map(o=>o.id));
+ const unlinked=group?state.questions.filter(q=>!linkedIds.has(q.objectiveId)).length:
+  state.studentArea.attempts.filter(a=>a.assessment===mode&&a.classId===reviewClass(mode)?.id&&a.lessonKey===key&&!linkedIds.has(a.objectiveId)).length;
+ const total=rows.reduce((n,r)=>n+r.responses,0);
+ const tag=group?'إجابات الفرق':'محاولات الطلبة الفردية';
+ const introduction=group?'نسبة الإجابات الصحيحة المسجلة للفرق حسب أهداف الدرس. لا تمثل إتقان كل طالب.':'نسبة الإجابات الصحيحة الفردية في الشعبة المختارة، من المحاولات التي سُجّل هدفها وقت الإجابة فقط.';
+ return `<section class="card lesson-objective-report" aria-label="مؤشر تحقق أهداف الدرس"><div class="card-head"><h3 class="card-title">${ICONS.target} مؤشر تحقق أهداف الدرس</h3><span class="pill">${tag}</span></div><div class="card-pad"><p class="caption">${introduction}</p><div class="lesson-objective-summary"><span>${num(goals.length)} أهداف مسجلة</span><span>${num(total)} إجابات قابلة للتحليل</span><span>${num(unlinked)} ${group?'أسئلة':'محاولات'} غير مرتبطة</span></div><div class="report-scroll"><table class="metric-table"><thead><tr><th>الهدف التعليمي</th><th>الأسئلة</th><th>الإجابات الصحيحة</th><th>نسبة الصحة</th><th>قراءة أولية</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${esc(row.text)}</td><td>${num(row.questions)}</td><td>${num(row.correct)} / ${num(row.responses)}</td><td>${row.rate===null?'—':num(row.rate)+'%'}</td><td>${row.responses===0?'لم يُقَس بعد':row.responses<3?'بيانات محدودة':row.rate<50?'راجع الأخطاء وقدّم تغذية راجعة':'تابع ثبات التعلم'}</td></tr>`).join('')}</tbody></table></div><p class="caption objective-caution">المؤشر وصفي، وليس حكم إتقان معتمدًا. نسبة الصحة لا تُحسب من التخمين، ولا تُنسب مشاركة المجموعة إلى طالب بعينه. الأسئلة القديمة غير المرتبطة تحتاج إلى ربط يدوي، والمحاولات الفردية القديمة دون هدف محفوظ لا تُنسب إلى هدف بأثر رجعي.</p></div></section>`;
 }
 // مراجعة الحصة: أعداد وملاحظات تُحسب من السجلات فقط. لا أحكام على مستوى الإتقان ولا مؤشرات جديدة.
 function lessonReviewHTML(){
@@ -1756,10 +1927,12 @@ function saveQuestion(form){
  const timeF=readIntField(fd,'time','زمن الإجابة',5,300),pointsF=readIntField(fd,'points','نقاط السؤال',1,1000);
  if(timeF.error||pointsF.error){toast(timeF.error||pointsF.error,true);return}
  const purpose=fd.get('purpose')==='tie'?'tie':'main';
- const q={id:prev?.id||'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),topic:String(fd.get('topic')||'سؤال عام').trim().slice(0,80),text:text.slice(0,1500),options:options.map(x=>x.slice(0,500)),optionImages,correct:clamp(Number(fd.get('correct')),0,3),time:timeF.value,points:pointsF.value,difficulty:['سهل','متوسط','صعب'].includes(fd.get('difficulty'))?fd.get('difficulty'):'متوسط',explanation:String(fd.get('explanation')||'').trim().slice(0,1200),image};
+ const q={id:prev?.id||'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),topic:String(fd.get('topic')||'سؤال عام').trim().slice(0,80),text:text.slice(0,1500),options:options.map(x=>x.slice(0,500)),optionImages,correct:clamp(Number(fd.get('correct')),0,3),time:timeF.value,points:pointsF.value,difficulty:['سهل','متوسط','صعب'].includes(fd.get('difficulty'))?fd.get('difficulty'):'متوسط',objectiveId:linkedLessonObjective(String(fd.get('objectiveId')||''))?.id||'',originId:prev?.originId||'',explanation:String(fd.get('explanation')||'').trim().slice(0,1200),image};
  if(prev){
-  if(state.tieBreak.active?.questionId===q.id||state.tieBreak.history.some(h=>h.questionId===q.id)){toast('هذا السؤال مستخدم في ركلة فاصلة؛ ابدأ مسابقة جديدة قبل تعديله.',true);return}
-  if(questionHasResults(prev.id)&&state.questions.some(x=>x.id===prev.id)){
+  const beforeTie=state.tieQuestions.some(x=>x.id===prev.id),afterTie=purpose==='tie';
+  const onlyLinkChanged=sameQuestionContent(q,prev)&&q.topic===prev.topic&&beforeTie===afterTie;
+  if(!onlyLinkChanged&&(state.tieBreak.active?.questionId===q.id||state.tieBreak.history.some(h=>h.questionId===q.id))){toast('هذا السؤال مستخدم في ركلة فاصلة؛ ابدأ مسابقة جديدة قبل تعديله.',true);return}
+  if(!onlyLinkChanged&&questionHasResults(prev.id)&&state.questions.some(x=>x.id===prev.id)){
    if(!confirm('لهذا السؤال إجابات ونتائج مسجّلة في هذا الدرس. تعديله سيمسح إجاباته ونتائجه فقط (بقية الأسئلة والنتائج لا تتغير). هل تتابع؟'))return;
   }
   const oldArr=state.questions.some(x=>x.id===prev.id)?state.questions:state.tieQuestions;
@@ -1767,8 +1940,10 @@ function saveQuestion(form){
   const newArr=purpose==='tie'?state.tieQuestions:state.questions;
   if(oldArr===newArr)oldArr.splice(idx,1,q);
   else{oldArr.splice(idx,1);newArr.push(q)}
-  delete state.finalized[q.id];delete state.answers[q.id];delete state.started[q.id];delete state.remainingTimes[q.id];delete state.locked[q.id];
-  stopTimer();state.currentIndex=clamp(state.currentIndex,0,Math.max(0,state.questions.length-1));state.timeLeft=qCurrent()?.time||30;
+  if(!onlyLinkChanged){
+   delete state.finalized[q.id];delete state.answers[q.id];delete state.started[q.id];delete state.remainingTimes[q.id];delete state.locked[q.id];
+   stopTimer();state.currentIndex=clamp(state.currentIndex,0,Math.max(0,state.questions.length-1));state.timeLeft=qCurrent()?.time||30;
+  }
  }else{
   const target=purpose==='tie'?state.tieQuestions:state.questions;
   if(target.length>=(purpose==='tie'?50:150)){toast('وصلت إلى الحد الأقصى لعدد الأسئلة.',true);return}
@@ -1921,7 +2096,8 @@ function handleAction(btn){
  case 'tab':
   if(state.tieBreak.active&&running){toast('أوقف مؤقت الركلة الفاصلة قبل تغيير التبويب.',true);break}
   if(running)stopTimer();if(studentRunning)stopStudentTimer();state.activeTab=btn.dataset.tab;save();render();break;
-  case 'focusQuestionEditor':{if(bankDeskView!=='lesson'){bankDeskView='lesson';switchCurriculumScope(state.curriculum.lastLesson);render()}const target=el('lessonEditor');if(target){target.scrollIntoView({behavior:'smooth',block:'start'});target.querySelector('textarea[name="text"]')?.focus({preventScroll:true})}break}
+  case 'removeLessonObjective':removeLessonObjective(btn.dataset.id);break;
+ case 'focusQuestionEditor':{if(bankDeskView!=='lesson'){bankDeskView='lesson';switchCurriculumScope(state.curriculum.lastLesson);render()}const target=el('lessonEditor');if(target){target.scrollIntoView({behavior:'smooth',block:'start'});target.querySelector('textarea[name="text"]')?.focus({preventScroll:true})}break}
   case 'switchAssessment':{const blocked=btn.dataset.mode!==state.settings.mode?contextChangeBlocker():'';if(blocked)toast(blocked,true);else switchAssessment(btn.dataset.mode);break}
   case 'copyToOther':copyToOtherBank(btn.dataset.id);break;
   case 'bankViewOrganize':bankDeskView='organize';archiveSelection.clear();render();break;
@@ -2022,7 +2198,7 @@ function handleAction(btn){
  }
 }
 document.addEventListener('click',e=>{if(state.settings.sounds)unlockAudio();const btn=e.target.closest('[data-action]');if(btn)handleAction(btn)});
-document.addEventListener('submit',e=>{if(e.target.id==='questionForm'){e.preventDefault();saveQuestion(e.target)}if(e.target.id==='settingsForm'){e.preventDefault();saveSettings(e.target)}if(e.target.id==='studentClassForm'){e.preventDefault();studentClassAdd(e.target)}if(e.target.id==='studentAddForm'){e.preventDefault();studentAdd(e.target)}});
+document.addEventListener('submit',e=>{if(e.target.id==='lessonObjectiveForm'){e.preventDefault();addLessonObjective(e.target)}if(e.target.id==='questionForm'){e.preventDefault();saveQuestion(e.target)}if(e.target.id==='settingsForm'){e.preventDefault();saveSettings(e.target)}if(e.target.id==='studentClassForm'){e.preventDefault();studentClassAdd(e.target)}if(e.target.id==='studentAddForm'){e.preventDefault();studentAdd(e.target)}});
 document.addEventListener('change',e=>{if(e.target.matches('[data-archive-id]')){if(e.target.checked)archiveSelection.add(e.target.dataset.archiveId);else archiveSelection.delete(e.target.dataset.archiveId);e.target.closest('.organizer-row')?.classList.toggle('selected',e.target.checked);syncArchiveSelection();return;}if(e.target.id==='qImage')readImage(e.target.files[0]);if(e.target.matches('[data-option-image]'))readImage(e.target.files[0],Number(e.target.dataset.optionImage));if(e.target.id==='importFile')importJSON(e.target.files[0]);if(e.target.id==='rosterFile')importRosterFile(e.target.files[0]);if(e.target.id==='bulkRosterFile')previewBulkRoster(e.target.files[0]);if(e.target.id==='studentClassSelect')chooseStudentClassAndGrade(e.target.value);if(e.target.id==='resultsClassSelect'){resultsClassId=e.target.value;render()}if(['currGrade','currUnit','currLesson'].includes(e.target.id))onCurrPickerChange(e.target.id);if(e.target.id==='studentQuestionSelect')selectQuestionForStudent(e.target.value);if(e.target.id==='studentSoftMatch'){state.studentArea.softMatch=e.target.checked;save()}if(e.target.matches('[data-student-level-id]'))studentChangeLevel(e.target.dataset.studentLevelId,e.target.value)});
 function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
 
@@ -2688,7 +2864,7 @@ function currentDraw(){const d=state.studentArea.selected,q=state.studentArea.mo
 function recordStudentAttempt(answer){
  const area=state.studentArea,a=area.session,q=studentSessionQuestion();if(!a||!q||a.recorded)return;
  a.recorded=true;a.locked=true;a.answer=answer;
- area.attempts.push({id:makeId('attempt'),classId:a.classId,studentId:a.studentId,questionId:a.questionId,assessment:a.assessment,answer,correct:answer===q.correct,points:answer===q.correct?q.points:0,time:new Date().toISOString(),difficulty:q.difficulty});
+ area.attempts.push({id:makeId('attempt'),classId:a.classId,studentId:a.studentId,questionId:a.questionId,assessment:a.assessment,answer,correct:answer===q.correct,points:answer===q.correct?q.points:0,time:new Date().toISOString(),difficulty:q.difficulty,objectiveId:linkedLessonObjective(q.objectiveId)?.id||'',lessonKey:currentCurrScope()});
  if(area.attempts.length>4000)area.attempts.shift();
 }
 function studentChoose(choice){const a=state.studentArea.session,q=studentSessionQuestion();if(!a||!q||!a.started||a.locked||a.timeLeft<=0)return toast('ابدأ الوقت لاختيار الإجابة.',true);
