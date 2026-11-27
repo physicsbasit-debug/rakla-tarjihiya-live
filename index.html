@@ -953,6 +953,20 @@ main .button:disabled{opacity:.5;cursor:not-allowed}
 .student-compact .stage-opt:disabled{cursor:default!important}
 .student-compact .stage-controlbar{flex:0 0 auto}
 @media(max-width:700px){.student-compact .stage-opts{grid-template-columns:1fr}.student-compact .stage-opt{min-height:76px}}
+/* Standalone individual question screen. Override old flex/grid sizing rules. */
+.stage-wrap.student-compact{box-sizing:border-box;height:100dvh;min-height:0;overflow-y:auto;overflow-x:hidden;display:block;padding:10px 16px 16px;scrollbar-width:auto}
+.student-compact .stage-top{min-height:0;margin:0 0 8px}
+.student-compact .stage-content{display:block!important;min-height:0;height:auto;overflow:visible!important;margin:0}
+.student-compact .stage-question{display:block!important;box-sizing:border-box;min-height:0!important;height:auto!important;overflow:visible!important;padding:14px 18px;border-radius:16px}
+.student-compact .stage-question h2{display:block;flex:none;font-size:clamp(20px,2.4vw,35px);line-height:1.35;margin:8px 0 12px}
+.student-compact .stage-question img.stage-figure{display:block;width:auto;max-width:100%;height:auto;max-height:min(32dvh,260px);margin:8px auto 14px;object-fit:contain}
+.student-compact .stage-opts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:none!important;grid-auto-rows:auto!important;align-items:stretch;flex:none!important;min-height:0!important;height:auto!important;overflow:visible!important;gap:10px;margin:12px 0 8px}
+.student-compact .stage-opt{box-sizing:border-box;display:flex;position:relative;min-height:86px!important;height:auto!important;padding:12px 14px;align-items:center;overflow:visible;font-size:clamp(17px,1.7vw,24px);cursor:pointer!important}
+.student-compact .stage-opt:not(:disabled){cursor:pointer!important}
+.student-compact .stage-opt:disabled{cursor:default!important}
+.student-compact .stage-opt .stage-option-body{flex:1;min-width:0;overflow-wrap:anywhere}
+.student-compact .stage-controlbar{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;background:#17422f;padding:8px 10px;margin-top:8px;border-radius:12px}
+@media(max-width:650px){.student-compact .stage-opts{grid-template-columns:1fr!important}.student-compact .stage-opt{min-height:66px!important}}
 </style>
 </head>
 <body>
@@ -2862,7 +2876,7 @@ function studentTick(){
  const q=studentSessionQuestion();
  const warnAt=Math.min(5,Math.max(2,(q?.time||30)-2));
  if(seconds>0&&!a.warningPlayed&&seconds<=warnAt){a.warningPlayed=true;playTimeWarning()}
- if(a.timeLeft!==seconds){a.timeLeft=seconds;const n=el('studentTimerDisplay');if(n)n.textContent=fmtTime(seconds);renderStage()}
+ if(a.timeLeft!==seconds){a.timeLeft=seconds;const n=el('studentTimerDisplay');if(n)n.textContent=fmtTime(seconds);if(stageWin&&!stageWin.closed){const stageClock=stageWin.document.querySelector('.student-compact .stage-time');if(stageClock){stageClock.textContent=fmtTime(seconds);stageClock.classList.toggle('time-up',seconds===0);stageClock.classList.toggle('time-low',seconds>0&&seconds<=10)}}}
  if(seconds<=0){stopStudentTimer();playEnd();if(a.answer===null){a.locked=true;recordStudentAttempt(-1);toast('انتهى الزمن، وسُجلت المحاولة دون إجابة.')}save();render();}
 }
 function selectQuestionForStudent(id){
