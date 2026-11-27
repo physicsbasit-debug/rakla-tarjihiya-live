@@ -2835,22 +2835,18 @@ function drawStudent(manualId='',excludeStudentId=''){
 
  if(area.mode==='teams'&&(state.finished||qIsLocked(q)))return toast('السؤال الحالي مغلق، انتقل إلى سؤال جديد.',true);
  if(area.mode==='individual'&&area.session&&!area.session.locked)return toast('أكمل المحاولة الفردية الحالية قبل اختيار طالب آخر.',true);
- let pool=c.students.filter(s=>(group===null||s.group===group)&&STUDENT_LEVELS.includes(s.level));
- // عند الضغط على «اختيار طالب آخر»، لا نعيد الطالب السابق ما دام يوجد بديل.
- if(excludeStudentId&&!manualId&&pool.length>1)pool=pool.filter(s=>s.id!==excludeStudentId);
- if(!pool.length)return toast(area.mode==='teams'?'لا يوجد طلبة مصنّفون ومُسندون إلى هذه المجموعة.':'لا يوجد طلبة بتصنيف معتمد في هذه الشعبة؛ راجع غير المصنّفين.',true);
  const required=QUESTION_LEVELS[q.difficulty||'متوسط']||'متوسط';
- const exact=pool.filter(s=>s.level===required);
- if(manualId){pool=pool.filter(s=>s.id===manualId);if(!pool.length)return toast('الطالب المختار غير موجود في المجموعة الحالية.',true)}
- else if(exact.length){
-  if(area.softMatch && Math.random()<.2){const neighbors={'يحتاج دعم':['متوسط'],'متوسط':['يحتاج دعم','متقدم'],'متقدم':['متوسط']}[required];const alternatives=pool.filter(s=>neighbors.includes(s.level));pool=alternatives.length?alternatives:exact}
-  else pool=exact;
- }else{
-  const distance={'يحتاج دعم':0,'متوسط':1,'متقدم':2},requested=distance[required],min=Math.min(...pool.map(s=>Math.abs(distance[s.level]-requested)));
-  pool=pool.filter(s=>Math.abs(distance[s.level]-requested)===min);
-  toast('لا يوجد طالب بالمستوى المطابق؛ اختير أقرب مستوى متاح دون إعلانه للطلاب.');
+ const eligible=c.students.filter(s=>(group===null||s.group===group)&&s.level===required);
+ // قرعة متمايزة صارمة: لا توسع صامت إلى مستوى آخر أو شعبة أخرى.
+ if(!eligible.length)return toast('لا يوجد طالب من فئة «'+required+'» في '+c.name+' للسؤال الحالي. راجع التصنيف أو اختر سؤالًا مناسبًا.',true);
+ let pool=eligible;
+ if(manualId){
+  pool=eligible.filter(s=>s.id===manualId);
+  if(!pool.length)return toast('الطالب المحدد لا ينتمي إلى فئة «'+required+'» في الشعبة والمجموعة الحالية.',true);
+ }else if(excludeStudentId&&eligible.length>1){
+  pool=eligible.filter(s=>s.id!==excludeStudentId);
  }
- const cycleKey=[c.id,group===null?'individual':`team${group}`,required,pool.map(s=>s.level).sort().join('_')].join('|');
+ const cycleKey=[state.settings.mode,c.id,group===null?'individual':`team${group}`,required].join('|');
  const used=Array.isArray(area.usedCycles[cycleKey])?area.usedCycles[cycleKey]:[];
  let choices=pool.filter(s=>!used.includes(s.id));
  if(!choices.length){choices=pool;area.usedCycles[cycleKey]=[]}
